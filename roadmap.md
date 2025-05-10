@@ -51,16 +51,33 @@
 
 ---
 
-### Phase 1.3: Basic Text Bug Report Parser
+### Phase 1.3A: PDF Bug Report Data Extraction
 
-- **Objective:** Implement a function to parse simple, structured text-based bug reports into a list of actionable steps.
+- **Objective:** Implement a system to extract text and relevant image data from PDF bug reports.
 - **Tasks:**
-    1. Define the input format for bug reports (e.g., plain text with numbered steps: "1. Go to homepage. 2. Click 'Login' button.").
-    2. Implement a Python function (`src/input_parser.py`) that takes a string containing the bug report and returns a list of strings, where each string is an individual step.
-    3. Develop unit tests for this parsing function (`tests/test_input_parser.py`).
-- **Scope Minimization:** Handle only the predefined simple format. No complex NLP or regex initially.
-- **Validate Outputs:** Ensure parser correctly splits various simple inputs.
-- **Checkpoint:** Parser function implemented and tested; code committed.
+    1. Create a PDF processor module (`src/ingestion/pdf_processor.py`) to extract text and images from PDF files.
+    2. Implement functions to identify and extract "Steps to Reproduce" sections from various PDF formats.
+    3. Extract screenshots and relevant images from the PDF that illustrate the bug.
+    4. Store extracted data in a structured format for later processing.
+    5. Develop unit tests for the PDF processor (`tests/test_pdf_processor.py`).
+- **Scope Minimization:** Focus only on extraction of raw data, not on interpretation or parsing into actionable steps.
+- **Validate Outputs:** Ensure PDF processor correctly extracts text and images from various PDF examples.
+- **Checkpoint:** PDF processor implemented and tested; code committed.
+
+---
+
+### Phase 1.3B: LLM-Based Task Graph Generation
+
+- **Objective:** Implement a system using Gemini 2.5 Pro to convert extracted PDF content into a structured task graph of actionable steps.
+- **Tasks:**
+    1. Integrate Google's Generative AI Python SDK for Gemini 2.5 Pro.
+    2. Design prompts for the LLM to effectively convert raw bug report content into structured steps.
+    3. Create a function to process extracted PDF data through the LLM and generate a list of actionable steps.
+    4. Implement validation and error handling for LLM-generated task graphs.
+    5. Develop unit tests for the task graph generator (`tests/test_task_graph_generator.py`).
+- **Scope Minimization:** Handle only clear, well-structured content. Build in fallbacks for cases where the LLM cannot parse reliably.
+- **Validate Outputs:** Ensure the generated task graphs accurately represent the steps described in the bug reports.
+- **Checkpoint:** Task graph generator implemented and tested; code committed.
 
 ---
 

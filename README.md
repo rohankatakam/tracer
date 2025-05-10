@@ -26,9 +26,19 @@ This system parses bug reports in a structured format and uses Anthropic's Claud
 ## Project Structure
 
 - `src/`: Source code for the project
-- `tests/`: Test files
-- `data/`: Storage for bug reports, screenshots, and execution logs
-- `scripts/`: Utility scripts
+  - `ingestion/`: PDF and other input processing modules
+  - `test_framework/`: Testing infrastructure including validators and test runner
+  - `test_cases/`: Predefined test case definitions
+  - `reporting/`: Report generation modules
+  - `utils/`: Utility functions like logging and JSON handling
+- `tests/`: Test scripts for the application itself
+  - `unit/`: Unit tests for individual components
+  - `integration/`: Integration tests for end-to-end functionality
+- `data/`: Storage for bug reports, execution logs, and outputs
+  - `test_inputs/`: Input files for testing (PDFs, etc.)
+  - `test_outputs/`: Output files generated during testing
+- `logs/`: Application and test logs
+- `run_cua.sh`: Main script for running the application and tests
 
 ## License
 
