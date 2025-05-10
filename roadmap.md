@@ -1,276 +1,258 @@
-# 4-Day MVP Development Roadmap
+# Development Roadmap
 
-## Day 1: Foundation & Core Components
+**Core Goal:** Develop a Python application that uses Anthropic's CUA API to reproduce text-based bug reports, then present success/failure with evidence. Demo-ready for YC.
 
-### Phase 1: Project Setup & Architecture (2-3 hours)
-**WindSurf Cascade Session #1**
+**Primary Development Tool:** WindSurf with Cascade Chat (using Claude 3.7 Sonnet Thinking)
+**Execution Target:** Anthropic Computer Use Agent (CUA) API
 
-- [ ] Initialize GitHub repository with README and project structure
-- [ ] Set up development environment (dependencies, virtual env)
-- [ ] Create project scaffolding and directory structure
-- [ ] Define core data models and interfaces (bug report, task graph, execution result)
-- [ ] Set up logging framework and basic error handling
-- [ ] Create configuration management system
-- [ ] Write initial test framework
+---
 
-**Deliverables:**
-- Working project structure with imports resolving correctly
-- Data models with proper validation
-- Configuration system that can be easily modified
-- Basic test suite running successfully
+## Day 1: Foundation, CUA Setup & Basic Input
 
-**Prompt for WindSurf:** "Help me set up the foundational architecture for my AI-powered bug reproduction system. We need to establish the project structure, core data models, and basic framework that will support all future components."
+**Overall Daily Goal:** Establish the project, connect to the Anthropic CUA, and parse simple text-based bug reports.
 
-### Phase 2: Multimodal Input Ingestion (2-3 hours)
-**WindSurf Cascade Session #2**
+**Deliverables for Day 1:**
 
-- [ ] Implement text input handler (markdown/plain text)
-- [ ] Create screenshot/image input processor
-- [ ] Build basic video frame extractor
-- [ ] Develop input validation and sanitization
-- [ ] Create unified input representation format
-- [ ] Implement simple storage interface for inputs
-- [ ] Add unit tests for each input type
+- Working local environment with Anthropic CUA quickstart successfully run.
+- Core Python project structure.
+- Script capable of making a basic CUA API call (e.g., navigate to a URL).
+- Function to parse simple, numbered text steps from a bug report into a Python list.
+- Successful execution of *one* CUA action driven by the script using a parsed step.
 
-**Deliverables:**
-- Working input handlers for text, images, and video
-- Input validation with appropriate error messages
-- Simple storage mechanism for input data
-- Tests demonstrating successful input processing
+---
 
-**Prompt for WindSurf:** "Let's implement the Multimodal Input Ingestion component of our bug reproduction system. This needs to handle text descriptions, screenshots, and video recordings, converting them into a standardized format for further processing."
+### Phase 1.1: Project Initialization & Environment Setup
 
-### Phase 3: Input Parser Development (2-3 hours)
-**WindSurf Cascade Session #3**
+- **Objective:** Create the foundational project structure and set up the Python environment.
+- **Tasks:**
+    1. Define and create the initial project directory structure (e.g., `src/`, `tests/`, `data/`, `scripts/`).
+    2. Initialize a Git repository with a `.gitignore` file appropriate for Python projects.
+    3. Create a `README.md` with a brief project description.
+    4. Set up a Python virtual environment.
+    5. Install initial dependencies: `anthropic`. Add them to `requirements.txt`.
+- **Tools/Repos:** Git, Python, venv.
+- **Checkpoint:** Basic project scaffold committed to Git.
 
-- [ ] Implement text parsing for bug descriptions (extract steps, expected results)
-- [ ] Develop basic image analysis to identify UI elements
-- [ ] Create simple temporal parsing for video frames
-- [ ] Build unified parser interface
-- [ ] Implement result storage/caching
-- [ ] Write unit tests for parser components
+---
 
-**Deliverables:**
-- Parser that extracts structured information from raw inputs
-- Identified UI elements from images with bounding boxes
-- Temporal sequence for video inputs
-- Comprehensive test cases for various input scenarios
+### Phase 1.2: Anthropic CUA Quickstart Familiarization & First API Call
 
-**Prompt for WindSurf:** "Now we need to build the Input Parser component that can extract actionable information from our multimodal inputs. This should convert raw user inputs into structured data that identifies UI elements, actions, and expected outcomes."
+- **Objective:** Understand the Anthropic CUA quickstart example and replicate a basic CUA API call from our project's script.
+- **Tasks:**
+    1. Review and run the [Anthropic Computer Use quickstart repo/examples](https://github.com/anthropics/anthropic-sdk-python/tree/main/examples/computer_use).
+    2. Develop a Python script (`src/main_controller.py` or similar) that:
+        - Initializes the Anthropic API client.
+        - Makes a single, hardcoded CUA tool call (e.g., `Maps_to_url` to "[https://example.com](https://example.com/)").
+    3. Verify the browser action occurs as expected.
+- **Tools/Repos:** Anthropic Python SDK.
+- **Scope Minimization:** Focus on a single, direct CUA call. Do not implement dynamic behavior yet.
+- **Feedback Logging (Initial):** Print the CUA API call details and the raw response to the console.
+- **Checkpoint:** Script successfully executes one CUA action; code committed.
 
-## Day 2: Core Logic & Execution
+---
 
-### Phase 4: Task Graph Generator (3-4 hours)
-**WindSurf Cascade Session #4**
+### Phase 1.3: Basic Text Bug Report Parser
 
-- [ ] Define task graph data structure (nodes, edges, properties)
-- [ ] Implement graph generation from parsed inputs
-- [ ] Create action mapping logic (text → UI interactions)
-- [ ] Build dependency management between actions
-- [ ] Implement graph validation and optimization
-- [ ] Develop serialization/deserialization for persistence
-- [ ] Add comprehensive test suite for graph generation
+- **Objective:** Implement a function to parse simple, structured text-based bug reports into a list of actionable steps.
+- **Tasks:**
+    1. Define the input format for bug reports (e.g., plain text with numbered steps: "1. Go to homepage. 2. Click 'Login' button.").
+    2. Implement a Python function (`src/input_parser.py`) that takes a string containing the bug report and returns a list of strings, where each string is an individual step.
+    3. Develop unit tests for this parsing function (`tests/test_input_parser.py`).
+- **Scope Minimization:** Handle only the predefined simple format. No complex NLP or regex initially.
+- **Validate Outputs:** Ensure parser correctly splits various simple inputs.
+- **Checkpoint:** Parser function implemented and tested; code committed.
 
-**Deliverables:**
-- Complete task graph generator that converts parsed inputs to executable graphs
-- Validation logic ensuring graph consistency
-- Serialization for storage and retrieval
-- Tests covering various graph generation scenarios
+---
 
-**Prompt for WindSurf:** "Let's develop the Task Graph Generator, which is the heart of our system. We need to create a robust graph structure that represents UI actions, their dependencies, and verification points based on our parsed inputs."
+## Day 2: Core Execution Loop & Output Capture
 
-### Phase 5: CUA Execution Engine - Part 1 (3-4 hours)
-**WindSurf Cascade Session #5**
+**Overall Daily Goal:** Execute a sequence of parsed bug report steps via CUA, capture visual evidence (screenshots), and begin structured logging of the process.
 
-- [ ] Set up browser automation framework (Playwright/Puppeteer)
-- [ ] Implement sandbox environment configuration
-- [ ] Create basic action executors (click, type, navigate)
-- [ ] Develop state capture mechanisms
-- [ ] Build executor controller for sequential operations
-- [ ] Implement basic logging and monitoring
-- [ ] Write initial execution tests
+**Deliverables for Day 2:**
 
-**Deliverables:**
-- Working browser automation setup
-- Capability to execute basic UI actions
-- State capture after each action
-- Execution logs with timing and results
-- Tests demonstrating successful basic actions
+- System that iterates through parsed steps, constructing prompts for Anthropic's Claude (to be executed by CUA) for each step.
+- Screenshots saved to disk after key CUA actions.
+- A preliminary JSON structure logging intended steps and Claude's CUA tool call requests.
 
-**Prompt for WindSurf:** "It's time to implement the CUA Execution Engine - the component that will actually interact with the UI to reproduce bugs. We'll need browser automation, action execution capabilities, and state capturing."
+---
 
-## Day 3: Execution & Verification
+### Phase 2.1: Sequential CUA Action Execution Loop
 
-### Phase 6: CUA Execution Engine - Part 2 (2-3 hours)
-**WindSurf Cascade Session #6**
+- **Objective:** Implement logic to iterate through parsed bug report steps and trigger corresponding CUA actions via Anthropic's Claude.
+- **Tasks:**
+    1. Modify `src/main_controller.py` to:
+        - Take the list of parsed steps as input.
+        - Loop through each step.
+        - For each step, construct a prompt for Anthropic's Claude. The prompt should instruct Claude to generate the appropriate CUA tool call(s) to perform the action described in the step text. (e.g., "Please generate the CUA tool call to: [parsed step text]").
+        - Execute the CUA tool call(s) returned by Anthropic's Claude.
+- **Scope Minimization:** Linear execution. If a step's CUA call fails (as reported by the CUA API), stop and log the error. No complex error recovery or retry logic yet.
+- **Feedback Logging:** Log the prompt sent to Anthropic's Claude for each step and the direct JSON response (tool use request) from Claude.
+- **Checkpoint:** Script attempts to execute a sequence of 2-3 actions from a parsed bug report; code committed.
 
-- [ ] Implement complex UI interactions (drag-drop, hover, etc.)
-- [ ] Add wait conditions and timing management
-- [ ] Create dynamic element selection strategies
-- [ ] Build chain execution capability for graph traversal
-- [ ] Implement execution state management
-- [ ] Develop execution cancelation/pause functionality
-- [ ] Extend test suite for complex scenarios
+---
 
-**Deliverables:**
-- Full-featured execution engine handling complex UI interactions
-- Robust element selection in dynamic UIs
-- Complete graph traversal capabilities
-- State management throughout execution
-- Tests for complex interaction scenarios
+### Phase 2.2: Screenshot Capture via CUA
 
-**Prompt for WindSurf:** "Let's enhance our CUA Execution Engine with support for complex UI interactions, robust element selection, and complete graph traversal capabilities."
+- **Objective:** Integrate CUA's screenshot capability to capture visual evidence during bug reproduction.
+- **Tasks:**
+    1. In `src/main_controller.py`, after each significant CUA action is executed (or as specified), use the CUA `screenshot` tool.
+    2. Save screenshots to a designated directory (e.g., `data/run_[timestamp]/screenshots/`).
+    3. Name screenshots meaningfully (e.g., `step_1_action_navigate.png`, `step_2_action_click.png`).
+- **Validate Outputs:** Manually review saved screenshots to confirm they accurately reflect the browser state at each intended capture point.
+- **Checkpoint:** Screenshots are captured and saved during the execution flow; code committed.
 
-### Phase 7: Result Verification System (2-3 hours)
-**WindSurf Cascade Session #7**
+---
 
-- [ ] Implement screenshot comparison functionality
-- [ ] Create DOM structure verification
-- [ ] Build UI state validation against expected results
-- [ ] Develop pass/fail criteria evaluation
-- [ ] Implement verification reporting
-- [ ] Create verification state storage
-- [ ] Add comprehensive verification tests
+### Phase 2.3: Proto Task Graph (JSON Logging)
 
-**Deliverables:**
-- Result verification system comparing actual vs expected outcomes
-- Visual comparison capabilities for UI verification
-- Structured reports of verification results
-- Tests demonstrating successful verification scenarios
+- **Objective:** Implement initial structured logging of the reproduction attempt into a JSON format. This will evolve into the "Task Graph."
+- **Tasks:**
+    1. Define a basic JSON schema for the run log. Key fields per step:
+        - `step_index` (integer)
+        - `original_instruction` (string from parsed bug report)
+        - `prompt_to_claude` (string)
+        - `claude_tool_calls_requested` (JSON object/array from Claude's response)
+        - `cua_execution_status` (e.g., "SUCCESS", "FAILURE_API_ERROR", "FAILURE_TOOL_ERROR")
+        - `screenshot_path` (string, if applicable)
+    2. Implement functionality in `src/main_controller.py` (or a new `src/logger.py`) to populate this JSON structure during a run.
+    3. Save the complete JSON log to a file at the end of each run (e.g., `data/run_[timestamp]/task_log.json`).
+- **Scope Minimization:** Focus on capturing information. This is primarily for logging and debugging at this stage.
+- **Checkpoint:** A JSON log file is generated for each reproduction attempt; code committed.
 
-**Prompt for WindSurf:** "We need to build the Result Verification system that will determine whether our bug reproduction was successful. This requires comparing actual UI states against expected outcomes and generating clear validation reports."
+---
 
-### Phase 8: Basic Failure Recovery (2-3 hours)
-**WindSurf Cascade Session #8**
+## Day 3: Verification, Enhanced Logging & Prompt Engineering
 
-- [ ] Implement retry mechanisms for failed actions
-- [ ] Create timeout and error handler framework
-- [ ] Develop alternative path selection for failures
-- [ ] Build recovery strategy selector
-- [ ] Implement recovery logging and analytics
-- [ ] Add failure injection testing
+**Overall Daily Goal:** Implement basic success/failure verification for the bug reproduction, create comprehensive execution logs, and refine prompts to Anthropic's Claude for more reliable CUA control.
 
-**Deliverables:**
-- Basic recovery system for handling execution failures
-- Configurable retry mechanisms
-- Error handling for common failure scenarios
-- Logs of recovery attempts and outcomes
-- Tests demonstrating recovery from injected failures
+**Deliverables for Day 3:**
 
-**Prompt for WindSurf:** "Let's implement the Basic Failure Recovery component that will handle execution failures through retries and basic error handling strategies."
+- A basic mechanism to determine if the bug was reproduced (e.g., checking for specific text on the final page).
+- Comprehensive execution log file incorporating all relevant details.
+- Refined JSON task graph/log that includes actual CUA outcomes and screenshot paths.
 
-## Day 4: Integration & Finalization
+---
 
-### Phase 9: Simple Data Storage Layer (2-3 hours)
-**WindSurf Cascade Session #9**
+### Phase 3.1: Basic Result Verification
 
-- [ ] Design storage schema for inputs, graphs, and results
-- [ ] Implement file-based storage for MVP
-- [ ] Create CRUD operations for all data types
-- [ ] Build query interface for result retrieval
-- [ ] Implement data persistence and backup
-- [ ] Add storage performance tests
+- **Objective:** Add a simple check to determine if the final step of the bug report achieved the expected outcome.
+- **Tasks:**
+    1. For the bug reports being tested, define a simple, verifiable expected outcome for the *final step* (e.g., "Text 'Welcome, TestUser!' should be visible on the page").
+    2. After the final step's CUA actions, use CUA's `read_page_content` tool to get the current page's text content.
+    3. Implement logic in `src/main_controller.py` to check if the expected text exists in the content retrieved.
+    4. Record a `final_verification_status` ("PASSED", "FAILED") in the JSON log.
+- **Scope Minimization:** Verify only one key piece of text on the final page. Avoid complex DOM parsing or image-based verification for the MVP.
+- **Validate Outputs:** Manually confirm if the system's "PASSED"/"FAILED" status aligns with the actual browser state.
+- **Checkpoint:** System reports a basic pass/fail status for the overall bug reproduction; code committed.
 
-**Deliverables:**
-- Complete storage system for all system artifacts
-- CRUD operations for all data types
-- Query capabilities for retrieving execution history
-- Data persistence across application restarts
-- Tests ensuring data integrity and retrieval
+---
 
-**Prompt for WindSurf:** "We need to implement the Simple Data Storage layer that will persist all our system artifacts including bug reports, task graphs, execution logs, and verification results."
+### Phase 3.2: Comprehensive Feedback Logging System
 
-### Phase 10: Execution Report Generator (2-3 hours)
-**WindSurf Cascade Session #10**
+- **Objective:** Establish a detailed and structured logging system using Python's `logging` module for robust debugging and iterative improvement.
+- **Tasks:**
+    1. Integrate Python's `logging` module into the application.
+    2. Configure logging to output to both console (INFO level) and a file (DEBUG level, e.g., `data/run_[timestamp]/execution.log`).
+    3. Ensure the following are logged with appropriate context (e.g., step number):
+        - Input bug report details.
+        - Prompt sent to Anthropic's Claude for each step.
+        - Anthropic Claude's full JSON response (including tool selection and arguments).
+        - Details of CUA tool calls being executed.
+        - CUA's response/result for each tool call (success, failure, data returned).
+        - Paths to any screenshots taken.
+        - Outcome of the final verification step.
+        - Any errors or exceptions encountered.
+- **Feedback Logging (for improvement):** This detailed file log is critical for diagnosing issues and refining prompts to Anthropic's Claude.
+- **Checkpoint:** Comprehensive log files are generated for each run, aiding in debugging; code committed.
 
-- [ ] Design report structure and format
-- [ ] Implement step-by-step execution summary generation
-- [ ] Create screenshot/video capture for key execution points
-- [ ] Build success/failure highlighting
-- [ ] Implement export capabilities (PDF, HTML, JSON)
-- [ ] Develop report retrieval interface
-- [ ] Add report generation tests
+---
 
-**Deliverables:**
-- Comprehensive execution report generator
-- Visual evidence capture in reports
-- Clear success/failure indicators
-- Multiple export formats
-- Tests verifying report completeness and accuracy
+### Phase 3.3: Refining Prompts to Anthropic's Claude & Enriching Task Graph
 
-**Prompt for WindSurf:** "Let's build the Execution Report Generator that will create comprehensive summaries of bug reproduction attempts, including visual evidence, success/failure status, and detailed execution logs."
+- **Objective:** Improve the reliability of CUA actions by iteratively refining the prompts sent to Anthropic's Claude, and ensure the JSON task graph/log is complete.
+- **Tasks:**
+    1. Analyze execution logs and JSON task logs from previous runs to identify common failure points or unreliable CUA actions.
+    2. Experiment with and refine the prompt structure provided to Anthropic's Claude. Consider:
+        - Clarity of action verbs.
+        - Specificity in identifying UI elements (e.g., "Click the button with exact text 'Submit Order'" vs. "Click submit").
+        - Providing context from previous steps if necessary.
+    3. Update the JSON task graph/log (`task_log.json`) to ensure it captures:
+        - `cua_tool_call_actual_outcome` (detailed success/error message from CUA execution for each tool call).
+        - Timestamps for key events.
+- **Scope Minimization:** Focus on improving reliability for the types of actions in your demo bug reports. Don't aim for universal understanding.
+- **Checkpoint:** Prompts to Anthropic's Claude are more robust for target scenarios. JSON task graph is comprehensive; code committed.
 
-### Phase 11: System Integration & End-to-End Testing (3-4 hours)
-**WindSurf Cascade Session #11**
+---
 
-- [ ] Integrate all components with proper interfaces
-- [ ] Build main application controller
-- [ ] Implement configuration validation
-- [ ] Create simple CLI interface
-- [ ] Develop end-to-end test scenarios
-- [ ] Add performance benchmarking
-- [ ] Create demonstration scripts
+## Day 4: Integration, Polishing & YC Demo Preparation
 
-**Deliverables:**
-- Fully integrated system with all components working together
-- Working end-to-end flows from input to report
-- CLI for invoking the system
-- Comprehensive end-to-end tests
-- Demonstration capability for the YC demo
+**Overall Daily Goal:** Ensure all components are smoothly integrated, create a compelling demo script with 1-2 examples, and polish the CLI and output artifacts.
 
-**Prompt for WindSurf:** "Now we need to integrate all our components into a cohesive system, create a unified controller, and implement end-to-end testing to ensure everything works together seamlessly."
+**Deliverables for Day 4:**
 
-### Phase 12: Final Polishing & YC Demo Preparation (1-2 hours)
-**WindSurf Cascade Session #12**
+- A polished end-to-end demo flow: input bug report -> CUA execution -> clear success/failure report (console summary, detailed logs, screenshots, JSON artifact).
+- A well-documented demo script for 1-2 compelling bug reproduction examples.
+- Cleaned-up codebase with comments and basic documentation.
 
-- [ ] Optimize critical paths for performance
-- [ ] Enhance error messages and user feedback
-- [ ] Create demo script with compelling examples
-- [ ] Prepare system overview documentation
-- [ ] Build simple metrics dashboard
-- [ ] Implement "wow factor" visualizations for demo
-- [ ] Final review and testing
+---
 
-**Deliverables:**
-- Polished system ready for demonstration
-- Documentation for quick reference
-- Compelling demo examples
-- Performance optimizations
-- Final code review and cleanup
+### Phase 4.1: End-to-End System Integration & CLI
 
-**Prompt for WindSurf:** "Let's finalize our system for the YC demo by polishing the user experience, optimizing performance, preparing compelling demonstrations, and ensuring everything is robust and impressive."
+- **Objective:** Integrate all developed components into a cohesive application controlled by a simple Command Line Interface (CLI).
+- **Tasks:**
+    1. Ensure `src/main_controller.py` (or a main script in `scripts/`) orchestrates the entire flow:
+        - Parses input bug report (from a file specified via CLI).
+        - Executes steps via CUA/Anthropic Claude.
+        - Performs verification.
+        - Handles logging (console summary and detailed file logs).
+        - Saves all artifacts (JSON task graph, screenshots) to a run-specific directory.
+    2. Implement a CLI using `argparse` in Python:
+        - Accept a path to a text file containing the bug report steps.
+        - Optionally, an output directory for run artifacts.
+    3. Display a concise summary of the run (e.g., "Bug report [name]: Reproduced [SUCCESS/FAILURE]. Artifacts saved to [path].").
+- **Scope Minimization:** Keep CLI arguments simple.
+- **Checkpoint:** System runs end-to-end via CLI command; code committed.
 
-## Testing Checkpoints Throughout Development
+---
 
-### Continuous Testing Requirements
-- Each phase must include unit tests for new functionality
-- Integration tests should be written as components are combined
-- End-to-end tests should be created during the final integration phase
-- All tests must pass before pushing to GitHub and moving to the next phase
+### Phase 4.2: Demo Script & Example Preparation
 
-### Test Categories
-1. **Functional Tests**: Verify each component works as expected
-2. **Integration Tests**: Ensure components work together correctly
-3. **Edge Case Tests**: Validate system behavior with unusual inputs
-4. **Performance Tests**: Verify acceptable speed and resource usage
-5. **Failure Recovery Tests**: Confirm system handles errors gracefully
+- **Objective:** Prepare and rehearse 1-2 compelling demo scenarios for the YC presentation.
+- **Tasks:**
+    1. Select 1-2 bug reports that:
+        - Are described by simple text steps.
+        - Are visually clear when reproduced/failed in a browser.
+        - The system can reliably handle.
+        - Demonstrate the "wow" factor (AI understanding and acting in a browser).
+    2. Write a detailed demo script:
+        - What you will say.
+        - What you will show (the input bug report file, the CLI command, the browser window during CUA execution, the console output, key parts of the log file, screenshots, and the final JSON task graph).
+    3. Practice the demo multiple times for smoothness and timing.
+- **Validate Outputs:** Ensure the demo runs flawlessly and effectively communicates the product's value.
+- **Checkpoint:** Demo scripts finalized and rehearsed.
 
-## Code Quality Guidelines
+---
 
-- Consistent coding style throughout the project
-- Comprehensive docstrings and comments
-- Strong type hints (if using Python)
-- Error handling at all critical points
-- Logging at appropriate levels
-- Configuration externalized from code
-- Modular design with clear separation of concerns
+### Phase 4.3: Final Code Polish & Documentation (`README.md`)
 
-## GitHub Workflow
+- **Objective:** Clean the codebase, add necessary comments/docstrings, and update the `README.md` for clarity and future reference.
+- **Tasks:**
+    1. Review all Python code for clarity, consistency, and add comments/docstrings where needed.
+    2. Ensure error handling is reasonable (e.g., graceful exits on critical errors).
+    3. Update the main `README.md` file to include:
+        - A brief overview of the project.
+        - Setup instructions (Python version, dependencies, environment variables if any for Anthropic API key).
+        - Instructions on how to run the bug reproduction script via the CLI.
+        - Description of the output artifacts (logs, JSON task graph, screenshots).
+    4. Organize the `data/` directory if needed, perhaps with example bug reports.
+- **Scope Minimization:** Focus on making the existing MVP code understandable and runnable. No new features.
+- **Checkpoint:** Code is clean, commented. `README.md` provides essential information. Project is demo-ready; final commit.
 
-1. Initialize repository at the beginning of Phase 1
-2. Create a new branch for each development phase
-3. Commit frequently with descriptive messages
-4. Run all tests before finalizing a phase
-5. Create a pull request for review (or self-review)
-6. Merge to main branch when phase is complete
-7. Tag major milestones for easy reference
+---
+
+### Optional Stretch Goals (Consider if ahead of schedule on any given day)
+
+- **Day 1 Stretch:** Implement a mechanism for Anthropic's Claude/CUA to provide a simple "element not found" or "action failed" structured response that your script can interpret beyond just a generic error.
+- **Day 2 Stretch:** Develop a very simple HTML report generator (Python script creating basic HTML) that takes the JSON task log and screenshots to display a more user-friendly summary of a run.
+- **Day 3 Stretch:** If a bug report involves checking for the *absence* of an element/text as a success condition, add support for this in the verification phase.
+- **Day 4 Stretch:** Parameterize a common target website/URL in a configuration file instead of hardcoding it if used frequently in demos.
