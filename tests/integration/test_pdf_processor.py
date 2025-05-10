@@ -72,19 +72,30 @@ def run_test(pdf_path: str = None):
         processor = PDFProcessor(output_dir=str(output_dir))
         
         # Process the PDF
-        pdf_result = processor.process_pdf(pdf_path)
+        result = processor.process_pdf(pdf_path)
         
-        # Convert to test case
-        test_case = processor.convert_to_test_case(pdf_result)
+        # Create raw data package
+        raw_data = processor.create_raw_data_package(result)
         
-        # Print summary
-        print("\n✅ SUCCESS: PDF processor test passed!")
+        # Display results
+        print(f"\n✅ SUCCESS: PDF processor test passed!")
         print(f"Processed PDF: {pdf_path}")
         print(f"Output directory: {output_dir}")
-        print(f"Extracted {len(pdf_result['pages'])} pages, {len(pdf_result['images'])} images, and {len(pdf_result['bug_steps'])} bug steps")
-        print("\nExtracted Bug Steps:")
-        for i, step in enumerate(pdf_result['bug_steps']):
-            print(f"  {i+1}. {step}")
+        print(f"Extracted {len(result['pages'])} pages and {len(result['images'])} images")
+        print(f"Raw text saved to: {raw_data['raw_text_file']}")
+        print(f"Images saved to: {raw_data['images_directory']}")
+        
+        # Print a sample of the extracted text (first 200 characters)
+        text_sample = raw_data["raw_text"][:200] + "..." if len(raw_data["raw_text"]) > 200 else raw_data["raw_text"]
+        print(f"\nRaw Text Sample:\n{text_sample}")
+        
+        # Print image information
+        print(f"\nExtracted Images:")
+        for i, img in enumerate(raw_data["images"][:5]):  # Show only first 5 images
+            print(f"  {i+1}. {img['filename']} ({img['width']}x{img['height']})")
+        
+        if len(raw_data["images"]) > 5:
+            print(f"  ... and {len(raw_data['images']) - 5} more images")
         
         return True
         
@@ -98,11 +109,11 @@ def run_test(pdf_path: str = None):
         return False
 
 if __name__ == "__main__":
-    # Parse command line arguments
-    if len(sys.argv) > 1:
-        pdf_path = sys.argv[1]
-        success = run_test(pdf_path)
-    else:
-        success = run_test()
+    import sys
     
+    # Check if a PDF path was provided as a command-line argument
+    pdf_path = sys.argv[1] if len(sys.argv) > 1 else None
+    
+    # Run the test
+    success = run_test(pdf_path)
     sys.exit(0 if success else 1)
