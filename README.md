@@ -21,19 +21,62 @@ This system parses bug reports in a structured format and uses Anthropic's Claud
    - Windows: `venv\Scripts\activate`  
    - macOS/Linux: `source venv/bin/activate`
 4. Install dependencies: `pip install -r requirements.txt`
-5. Configure your Anthropic API key as an environment variable: `export ANTHROPIC_API_KEY=your_api_key_here`
 
 ## Project Structure
 
-- `src/`: Source code for the project
-  - `ingestion/`: PDF and other input processing modules
-  - `test_framework/`: Testing infrastructure including validators and test runner
-  - `test_cases/`: Predefined test case definitions
-  - `reporting/`: Report generation modules
-  - `utils/`: Utility functions like logging and JSON handling
-- `tests/`: Test scripts for the application itself
-  - `unit/`: Unit tests for individual components
-  - `integration/`: Integration tests for end-to-end functionality
+```
+/
+├── data/                     # Data storage directory
+│   ├── chrome_search_test/   # Test results for Chrome search tasks
+│   ├── outputs/              # Extracted data outputs
+│   ├── task_graphs/          # Task graph definition files
+│   └── test_output/          # General test output data
+├── docs/                     # Documentation
+├── src/                      # Source code
+│   ├── extraction/           # Content extraction modules
+│   ├── ingestion/            # Data ingestion modules
+│   ├── reporting/            # Reporting utilities
+│   ├── test_cases/           # Test case definitions
+│   ├── test_framework/       # Test framework components
+│   └── utils/                # Utility functions
+├── tests/                    # Test suites
+└── requirements.txt          # Dependencies
+```
+
+## Features
+
+- Task graph-based automation using Claude API
+- Browser automation for web interactions
+- Content extraction from web pages
+- Comprehensive logging and reporting
+- Enhanced bug data schema support
+
+## Getting Started
+
+1. Install dependencies:
+   ```
+   pip install -r requirements.txt
+   ```
+
+2. Set up environment variables:
+   ```
+   ANTHROPIC_API_KEY=your_api_key_here
+   ```
+
+3. Run a sample test:
+   ```
+   python test_chrome_search.py
+   ```
+
+## Task Graphs
+
+Task graphs define a sequence of steps to be executed by the automation framework. Each step includes:
+
+- Action to be performed
+- Verification of the action
+- Success and failure paths
+
+See `data/task_graphs/chrome_search_task_graph.json` for an example.
 - `data/`: Storage for bug reports, execution logs, and outputs
   - `test_inputs/`: Input files for testing (PDFs, etc.)
   - `test_outputs/`: Output files generated during testing
