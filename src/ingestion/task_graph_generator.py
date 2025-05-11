@@ -25,7 +25,7 @@ from src.utils.json_utils import save_json, load_json
 class TaskGraphGenerator:
     """Class for generating task graphs from raw PDF extraction data using Gemini."""
     
-    def __init__(self, model_name: str = "gemini-2.5-pro-latest", 
+    def __init__(self, model_name: str = "gemini-2.5-pro-exp-03-25", 
                  output_dir: Optional[str] = None, 
                  log_level: int = logging.INFO):
         """Initialize the Task Graph Generator.
@@ -119,8 +119,84 @@ Remember: You MUST include detailed screenshot references in each step to guide 
         
         self.logger.info(f"TaskGraphGenerator initialized with model: {self.model_name}")
 
-    def generate_task_graph(self, raw_data_package: Dict[str, Any]) -> Dict[str, Any]:
-        """Generate a task graph from raw PDF extraction data.
+    def generate_task_graph(self, bug_data_package: Dict[str, Any]) -> Dict[str, Any]:
+        """Generate a task graph from comprehensive bug data.
+        
+        Args:
+            bug_data_package: The bug data package containing metadata, content, and attachments
+            
+        Returns:
+            Dict containing the generated task graph
+        """
+        # Check if this is the old raw_data_package format or the new enhanced schema
+        if 'bug_metadata' not in bug_data_package and 'raw_text' in bug_data_package:
+            # This is the old schema - handle it with backward compatibility
+            return self._generate_task_graph_legacy(bug_data_package)
+        
+        # This is the new enhanced schema - process it accordingly
+        self.logger.info(f"Generating task graph for: {bug_data_package.get('bug_metadata', {}).get('bug_id', 'unknown')}")
+        
+        # Create a temporary directory for processing attachments if needed
+        output_dir = self.output_dir / "temp_processing"
+        output_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Process any attachments
+        processed_attachments = []
+        if 'attachments' in bug_data_package and bug_data_package['attachments']:
+            for attachment in bug_data_package['attachments']:
+                # Check file_path exists
+                file_path = attachment.get('content', {}).get('file_path', '')
+                if file_path and Path(file_path).exists():
+                    # Process the attachment based on its type
+                    if attachment['type'] == 'pdf':
+                        # Create a directory for this attachment
+                        attachment_dir = output_dir / f"attachment_{attachment['id']}"
+                        attachment_dir.mkdir(parents=True, exist_ok=True)
+                        
+                        # Process the PDF using PDFProcessor with the attachment directory as output
+                        from src.ingestion.pdf_processor import PDFProcessor
+                        pdf_processor = PDFProcessor(output_dir=str(attachment_dir))
+                        pdf_data = pdf_processor.process_pdf(file_path)
+                        
+                        # Update the attachment with the processed data
+                        attachment['content']['raw_text'] = pdf_data.get('raw_text', '')
+                        attachment['content']['images'] = pdf_data.get('images', [])
+                        attachment['content']['processed_dir'] = str(attachment_dir)
+                        
+                        processed_attachments.append(attachment)
+                    elif attachment['type'] in ['image', 'jpg', 'jpeg', 'png']:
+                        # Create a directory for this image attachment
+                        attachment_dir = output_dir / f"attachment_{attachment['id']}"
+                        attachment_dir.mkdir(parents=True, exist_ok=True)
+                        
+                        # Copy the image to the processing directory
+                        import shutil
+                        dest_path = attachment_dir / Path(file_path).name
+                        shutil.copy2(file_path, dest_path)
+                        
+                        # Update the attachment with the path info
+                        attachment['content']['processed_dir'] = str(attachment_dir)
+                        attachment['content']['processed_path'] = str(dest_path)
+                        
+                        processed_attachments.append(attachment)
+        
+        # Build a comprehensive prompt that includes all bug data
+        user_prompt = self._build_enhanced_prompt(bug_data_package, processed_attachments)
+        
+        # Generate the task graph
+        task_graph = self._call_gemini_api(user_prompt, bug_data_package)
+        
+        # Save the task graph to a file
+        if self.output_dir:
+            bug_id = bug_data_package.get('bug_metadata', {}).get('bug_id', 'unknown')
+            output_path = self.output_dir / f"{bug_id}_task_graph.json"
+            save_json(task_graph, str(output_path), pretty=True)
+            self.logger.info(f"Saved task graph to: {output_path}")
+        
+        return task_graph
+    
+    def _generate_task_graph_legacy(self, raw_data_package: Dict[str, Any]) -> Dict[str, Any]:
+        """Legacy method to generate a task graph from raw PDF extraction data.
         
         Args:
             raw_data_package: The raw data package from the PDF processor
@@ -128,7 +204,7 @@ Remember: You MUST include detailed screenshot references in each step to guide 
         Returns:
             Dict containing the generated task graph
         """
-        self.logger.info(f"Generating task graph for: {raw_data_package.get('name', 'unknown')}")
+        self.logger.info(f"Generating task graph using legacy method for: {raw_data_package.get('name', 'unknown')}")
         
         # Extract the relevant content from the raw data package
         raw_text = raw_data_package.get('raw_text', '')
@@ -153,6 +229,76 @@ Remember: You MUST include detailed screenshot references in each step to guide 
             self.logger.info(f"Saved task graph to: {output_path}")
         
         return task_graph
+        
+    def _build_enhanced_prompt(self, bug_data_package: Dict[str, Any], processed_attachments: List[Dict[str, Any]]) -> str:
+        """Build a comprehensive prompt from the enhanced bug data package.
+        
+        Args:
+            bug_data_package: The enhanced bug data package with metadata, content, etc.
+            processed_attachments: List of processed attachments with extracted content
+            
+        Returns:
+            A comprehensive prompt string for the Gemini API
+        """
+        prompt_parts = []
+        
+        # Add bug metadata
+        if 'bug_metadata' in bug_data_package:
+            metadata = bug_data_package['bug_metadata']
+            prompt_parts.append(f"BUG ID: {metadata.get('bug_id', 'Unknown')}")
+            prompt_parts.append(f"TITLE: {metadata.get('bug_title', 'Unknown')}")
+            prompt_parts.append(f"SEVERITY: {metadata.get('severity', {}).get('description', 'Unknown')}")
+            prompt_parts.append(f"PRODUCT: {metadata.get('product', {}).get('name', 'Unknown')} {metadata.get('product', {}).get('version', {}).get('reported', 'Unknown')}")
+            prompt_parts.append(f"CUSTOMER: {metadata.get('customer', {}).get('name', 'Unknown')}")
+            prompt_parts.append(f"ENVIRONMENT: {metadata.get('customer', {}).get('environment', 'Unknown')}")
+        
+        # Add bug content
+        if 'bug_content' in bug_data_package:
+            content = bug_data_package['bug_content']
+            if 'description' in content:
+                prompt_parts.append(f"\nDESCRIPTION:\n{content['description']}")
+            if 'steps_to_reproduce' in content:
+                prompt_parts.append(f"\nSTEPS TO REPRODUCE:\n{content['steps_to_reproduce']}")
+            if 'expected_outcome' in content:
+                prompt_parts.append(f"\nEXPECTED OUTCOME:\n{content['expected_outcome']}")
+            if 'additional_info' in content:
+                prompt_parts.append(f"\nADDITIONAL INFO:\n{content['additional_info']}")
+        
+        # Add comments if available
+        if 'comments' in bug_data_package and bug_data_package['comments']:
+            prompt_parts.append("\nCOMMENTS:")
+            for comment in bug_data_package['comments']:
+                prompt_parts.append(f"Comment by {comment.get('author', 'Unknown')} on {comment.get('date', 'Unknown')}:\n{comment.get('content', '')}\n")
+        
+        # Add processed attachment content
+        if processed_attachments:
+            prompt_parts.append("\nATTACHMENT CONTENT:")
+            for attachment in processed_attachments:
+                attachment_name = attachment.get('name', 'Unknown attachment')
+                attachment_type = attachment.get('type', 'unknown')
+                
+                prompt_parts.append(f"\nAttachment: {attachment_name} (Type: {attachment_type})")
+                
+                # Add extracted text from attachments if available
+                if 'content' in attachment and 'raw_text' in attachment['content'] and attachment['content']['raw_text']:
+                    # Truncate very long raw text to avoid exceeding token limits
+                    raw_text = attachment['content']['raw_text']
+                    if len(raw_text) > 5000:  # Arbitrary limit to avoid extremely long prompts
+                        raw_text = raw_text[:5000] + "... [text truncated due to length]"
+                    prompt_parts.append(f"Extracted text:\n{raw_text}")
+                
+                # Add image references if available
+                if 'content' in attachment and 'images' in attachment['content'] and attachment['content']['images']:
+                    images = attachment['content']['images']
+                    prompt_parts.append(f"Contains {len(images)} images/screenshots that can be referenced in the task graph.")
+                    for i, image in enumerate(images[:10]):  # Limit to first 10 images to avoid extremely long prompts
+                        image_path = image.get('path', '')
+                        if image_path:
+                            image_name = Path(image_path).name
+                            prompt_parts.append(f"Image {i+1}: {image_name}")
+        
+        # Combine all parts into a single prompt
+        return "\n".join(prompt_parts)
 
     def _prepare_image_references(self, images: List[Dict[str, Any]], images_directory: str) -> str:
         """Prepare image references as text for inclusion in the prompt.
@@ -233,8 +379,8 @@ Please generate a complete task graph following the OUTPUT FORMAT provided in th
         self.logger.info(f"User prompt length: {len(user_prompt)} characters")
         
         try:
-            # Use the Gemini 2.5 Pro Experimental model (with free quota)
-            model = "gemini-2.5-pro-exp-03-25"
+            # Use the model specified in the constructor
+            model = self.model_name
             
             # Prepare the content with the text prompt
             contents = [

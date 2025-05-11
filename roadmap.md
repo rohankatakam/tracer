@@ -51,30 +51,49 @@
 
 ---
 
-### Phase 1.3A: PDF Bug Report Data Extraction
+### Phase 1.3A: Comprehensive Bug Data Extraction
 
-- **Objective:** Implement a system to extract text and relevant image data from PDF bug reports.
+- **Objective:** Implement a system to extract and structure comprehensive bug data from various sources, while preserving our proven PDF processing technology for attachment handling.
 - **Tasks:**
-    1. Create a PDF processor module (`src/ingestion/pdf_processor.py`) to extract text and images from PDF files.
-    2. Implement functions to identify and extract "Steps to Reproduce" sections from various PDF formats.
-    3. Extract screenshots and relevant images from the PDF that illustrate the bug.
-    4. Store extracted data in a structured format for later processing.
-    5. Develop unit tests for the PDF processor (`tests/test_pdf_processor.py`).
-- **Scope Minimization:** Focus only on extraction of raw data, not on interpretation or parsing into actionable steps.
-- **Validate Outputs:** Ensure PDF processor correctly extracts text and images from various PDF examples.
-- **Checkpoint:** PDF processor implemented and tested; code committed.
+    1. Maintain the existing PDF processor module (`src/ingestion/pdf_processor.py`) for extracting text and images from PDF files.
+    2. Enhance attachment processing to support both PDF and image attachments:
+       - PDF attachments: Process using existing PDF processor (folder with JSON, raw text, images)
+       - Image attachments: Create dedicated folders with the original image and a JSON extraction result from Gemini 2.5 Pro
+    3. Design a comprehensive bug data schema to include:
+       - Bug metadata (ID, title, severity, status)
+       - Customer and product information
+       - Detailed bug content (description, steps to reproduce, expected outcome)
+       - Attachments with content extraction (maintaining existing structure for each attachment)
+       - Stakeholder comments and history
+    4. Ensure each attachment maintains its own folder structure with extracted content, similar to our existing PDF processing approach.
+    5. Develop adapters for importing data from common bug tracking systems into the enhanced schema.
+    6. Save extracted data in the enhanced schema as structured JSON while preserving attachment-specific processing.
+    7. Develop unit tests for the data extraction and processing components.
+- **Scope Minimization:** Preserve proven PDF processing technology while extending to other attachment types and metadata sources.
+- **Validate Outputs:** Ensure all extracted data maintains proper structure and relationships across the enhanced schema.
+- **Checkpoint:** Bug data extraction system successfully processes information into the enhanced schema with proper attachment handling; code committed.
 
 ---
 
-### Phase 1.3B: LLM-Based Task Graph Generation
+### Phase 1.3B: Enhanced Task Graph Generation
 
-- **Objective:** Implement a system using Gemini 2.5 Pro to convert extracted PDF content into a structured task graph of actionable steps.
+- **Objective:** Implement a system using Gemini 2.5 Pro to convert comprehensive bug data into a structured task graph of actionable steps, leveraging all available information while maintaining the existing output schema.
 - **Tasks:**
     1. Integrate Google's Generative AI Python SDK for Gemini 2.5 Pro.
-    2. Design prompts for the LLM to effectively convert raw bug report content into structured steps.
-    3. Create a function to process extracted PDF data through the LLM and generate a list of actionable steps.
-    4. Implement validation and error handling for LLM-generated task graphs.
-    5. Develop unit tests for the task graph generator (`tests/test_task_graph_generator.py`).
+    2. Enhance the TaskGraphGenerator to process the comprehensive bug data schema:
+       - Process bug metadata, content, and comments
+       - Process all attachments (PDFs and images) using their extracted content
+       - Maintain the existing task graph output schema structure
+    3. Design sophisticated prompts that utilize all available information sources:
+       - Core bug description and steps to reproduce
+       - PDF attachment content (text and images) from our existing extraction
+       - Image attachment content with Gemini 2.5 Pro analysis
+       - Metadata and stakeholder comments
+    4. Implement intelligent context aggregation to combine information from multiple sources.
+    5. Ensure backward compatibility with legacy data formats.
+    6. Implement validation and error handling for LLM-generated task graphs.
+    7. Create mechanisms to handle conflicting information across multiple sources.
+    8. Develop unit tests for the enhanced task graph generator.
 - **Scope Minimization:** Handle only clear, well-structured content. Build in fallbacks for cases where the LLM cannot parse reliably.
 - **Validate Outputs:** Ensure the generated task graphs accurately represent the steps described in the bug reports.
 - **Checkpoint:** Task graph generator implemented and tested; code committed.
