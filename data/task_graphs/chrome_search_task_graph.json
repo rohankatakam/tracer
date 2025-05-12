@@ -1,0 +1,152 @@
+{
+  "name": "chrome_larry_ellison_search",
+  "description": "Basic browser test to search for Larry Ellison on Google and find the Wikipedia page in search results",
+  "environment": {
+    "application": "Google Chrome",
+    "browser": "Google Chrome",
+    "operating_system": "Any modern OS capable of running Chrome"
+  },
+  "task_graph": {
+    "nodes": [
+      {
+        "id": "1",
+        "type": "action",
+        "content": "Open Google Chrome and navigate to Google.com",
+        "metadata": {
+          "image_refs": [],
+          "ui_elements": [
+            "Chrome browser icon",
+            "Browser window",
+            "Google.com page"
+          ],
+          "inputs": [],
+          "expected_result": "Google search page is displayed with search box in the center"
+        }
+      },
+      {
+        "id": "2",
+        "type": "action",
+        "content": "Click on the Google search box and type 'Larry Ellison'",
+        "metadata": {
+          "image_refs": [],
+          "ui_elements": [
+            "Google search box"
+          ],
+          "inputs": [
+            "Larry Ellison"
+          ],
+          "expected_result": "The search term 'Larry Ellison' appears in the search box"
+        }
+      },
+      {
+        "id": "3",
+        "type": "action",
+        "content": "Press Enter to submit the search query",
+        "metadata": {
+          "image_refs": [],
+          "ui_elements": [
+            "Enter key",
+            "Google search button"
+          ],
+          "inputs": [],
+          "expected_result": "Google search results page for 'Larry Ellison' appears"
+        }
+      },
+      {
+        "id": "4",
+        "type": "action",
+        "content": "Look for the Wikipedia page for Larry Ellison in the search results. It should be among the top results. If not immediately visible, scroll down to find it.",
+        "metadata": {
+          "image_refs": [],
+          "ui_elements": [
+            "Wikipedia search result",
+            "Page scroll bar"
+          ],
+          "inputs": [],
+          "expected_result": "The Wikipedia page for Larry Ellison is visible in the search results"
+        }
+      },
+      {
+        "id": "5",
+        "type": "action",
+        "content": "Click on the Wikipedia search result for Larry Ellison",
+        "metadata": {
+          "image_refs": [],
+          "ui_elements": [
+            "Wikipedia search result link"
+          ],
+          "inputs": [],
+          "expected_result": "The browser navigates to the Wikipedia page for Larry Ellison"
+        }
+      },
+      {
+        "id": "6",
+        "type": "verification",
+        "content": "Verify that the Wikipedia page for Larry Ellison has loaded by confirming the page title includes 'Larry Ellison' and the Oracle corporation is mentioned in the content.",
+        "metadata": {
+          "image_refs": [],
+          "ui_elements": [
+            "Wikipedia page title",
+            "Wikipedia page content"
+          ],
+          "inputs": [],
+          "expected_result": "The Wikipedia page for Larry Ellison is successfully loaded, showing biographical information about the Oracle founder"
+        }
+      },
+      {
+        "id": "7",
+        "type": "action",
+        "content": "Extract the first paragraph from the Wikipedia page and find the Personal Life section. Save both texts to an output file.",
+        "metadata": {
+          "image_refs": [],
+          "ui_elements": [
+            "Wikipedia article first paragraph",
+            "Personal Life section",
+            "Page scroll"
+          ],
+          "inputs": [],
+          "expected_result": "The first paragraph and Personal Life section text are extracted and saved to a file"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "source": "1",
+        "target": "2"
+      },
+      {
+        "source": "2",
+        "target": "3"
+      },
+      {
+        "source": "3",
+        "target": "4"
+      },
+      {
+        "source": "4",
+        "target": "5"
+      },
+      {
+        "source": "5",
+        "target": "6"
+      },
+      {
+        "source": "6",
+        "target": "7"
+      }
+    ]
+  },
+  "verification_steps": [
+    "Step 1: Verify that Chrome opens and navigates to Google.com",
+    "Step 2: Verify that 'Larry Ellison' is entered in the search box",
+    "Step 3: Verify that search results appear for 'Larry Ellison'",
+    "Step 4: Verify that Wikipedia result is found in the search results",
+    "Step 5: Verify that clicking the link opens the Wikipedia page",
+    "Step 6: Verify that the Wikipedia page contains information about Larry Ellison and Oracle"
+  ],
+  "confidence_score": 0.95,
+  "source": {
+    "model": "manual-creation",
+    "raw_data_package": "none"
+  }
+}
