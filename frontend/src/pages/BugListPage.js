@@ -38,32 +38,47 @@ const dummyBugs = [
 ];
 // --- End Dummy Data ---
 
+const getSeverityStyle = (severity) => {
+  switch (severity?.toLowerCase()) {
+    case 'critical':
+      return { color: '#dc3545', fontWeight: 'bold' }; // Red
+    case 'high':
+      return { color: '#fd7e14' }; // Orange
+    case 'medium':
+      return { color: '#ffc107' }; // Yellow
+    case 'low':
+      return { color: '#17a2b8' }; // Cyan/Blue
+    default:
+      return {};
+  }
+};
+
 function BugListPage() {
   return (
     <div>
       <div className="page-header">
         <h1>Outstanding Bugs</h1>
       </div>
-      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+      <table>
         <thead>
-          <tr style={{ borderBottom: '1px solid #ddd', textAlign: 'left' }}>
-            <th style={{ padding: '8px' }}>Bug ID</th>
-            <th style={{ padding: '8px' }}>Title</th>
-            <th style={{ padding: '8px' }}>Severity</th>
-            <th style={{ padding: '8px' }}>Status</th>
-            <th style={{ padding: '8px' }}>Product</th>
+          <tr>
+            <th>Bug ID</th>
+            <th>Title</th>
+            <th>Severity</th>
+            <th>Status</th>
+            <th>Product</th>
           </tr>
         </thead>
         <tbody>
           {dummyBugs.map((bug) => (
-            <tr key={bug.id} style={{ borderBottom: '1px solid #eee' }}>
-              <td style={{ padding: '8px' }}>
+            <tr key={bug.id}>
+              <td>
                 <Link to={`/bugs/${bug.id}`}>{bug.id}</Link>
               </td>
-              <td style={{ padding: '8px' }}>{bug.title}</td>
-              <td style={{ padding: '8px' }}>{bug.severity}</td>
-              <td style={{ padding: '8px' }}>{bug.status}</td>
-              <td style={{ padding: '8px' }}>{bug.product}</td>
+              <td>{bug.title}</td>
+              <td style={getSeverityStyle(bug.severity)}>{bug.severity}</td>
+              <td>{bug.status}</td>
+              <td>{bug.product}</td>
             </tr>
           ))}
         </tbody>
