@@ -18,18 +18,23 @@ function App() {
       <div className="App">
         <nav>
           <ul>
-            {/* Basic navigation for context, might remove later */}
-            <li><Link to="/bugs">Bug List</Link></li>
+            <li>
+              <Link to="/bugs" className="nav-brand">
+                <img src="/images/tracer-logo.png" alt="Tracer Logo" className="nav-logo" />
+                {/* Removed text link from here to avoid redundancy */}
+              </Link>
+            </li>
+            {/* Optional: Add other main navigation items here as separate <li> elements */}
+             <li><Link to="/bugs">Bugs</Link></li>
           </ul>
         </nav>
-        <main className="container">
+        <main className="container"> {/* Keep .container for main content padding/max-width */}
           <Routes>
             <Route path="/" element={<Navigate to="/bugs" replace />} />
             <Route path="/bugs" element={<BugListPage />} />
             <Route path="/bugs/:bugId" element={<BugDetailPage />} />
             <Route path="/tracer/:bugId/run" element={<TracerPage />} />
             <Route path="/tracer/:bugId/results" element={<ResultsPage />} />
-            {/* Add a 404 or default route later if needed */}
           </Routes>
         </main>
       </div>
