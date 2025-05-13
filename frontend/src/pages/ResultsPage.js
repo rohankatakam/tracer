@@ -73,64 +73,75 @@ Relevant Code Files (Simulated):
         navigate(`/tracer/${bugId}/run`);
     };
 
+    const reproductionStatusStyle = {
+        padding: '15px 20px',
+        borderRadius: '6px',
+        marginBottom: '25px',
+        border: '1px solid',
+        backgroundColor: simulatedReproduced ? '#d4edda' : '#f8d7da',
+        borderColor: simulatedReproduced ? '#c3e6cb' : '#f5c6cb',
+        color: simulatedReproduced ? '#155724' : '#721c24',
+    };
+
     return (
         <div>
             <div className="page-header">
                 <h1>Tracer Results: Bug {bugId}</h1>
             </div>
 
-            <section style={{ marginBottom: '25px', padding: '15px', border: `2px solid ${simulatedReproduced ? '#2ecc71' : '#e74c3c'}` }}>
-                <h2>Reproduction Status: {simulatedReproduced ? 'Successfully Reproduced' : 'Failed to Reproduce'}</h2>
+            <section style={reproductionStatusStyle}>
+                <h2 style={{ marginTop: 0, marginBottom: 0, fontSize: '1.4em' }}>
+                     Reproduction Status: {simulatedReproduced ? 'Successfully Reproduced' : 'Failed to Reproduce'}
+                 </h2>
             </section>
 
-            <section style={{ marginBottom: '20px' }}>
+            <div className="card">
                 <h3>Result Categorization</h3>
                 <label htmlFor="resultCode">Result Code: </label>
-                <select id="resultCode" value={resultCode} onChange={(e) => setResultCode(e.target.value)} style={{ marginLeft: '10px', padding: '5px' }}>
+                <select id="resultCode" value={resultCode} onChange={(e) => setResultCode(e.target.value)} style={{ marginLeft: '10px', padding: '5px', minWidth: '250px' }}>
                     {Object.entries(resultCodes).map(([code, description]) => (
                         <option key={code} value={code}>{description} ({code})</option>
                     ))}
                 </select>
-                <p style={{ fontSize: '0.9em', color: '#555' }}>*LLM-generated suggestion, editable by user.*</p>
-            </section>
+                <p style={{ fontSize: '0.9em', color: '#6c757d', marginTop: '5px' }}>*LLM-generated suggestion, editable by user.*</p>
+            </div>
 
-            {/* Display dynamic sections based on outcome */} 
             {!simulatedReproduced && moreInfoRequest && (
-                <section style={{ marginBottom: '20px', border: '1px solid #f1c40f', padding: '10px' }}>
-                    <h3>Request for More Information (from Customer)</h3>
+                <div className="card">
+                    <h3 style={{ color: '#856404' }}>Request for More Information (from Customer)</h3>
                     <p>{moreInfoRequest}</p>
-                </section>
+                </div>
             )}
 
              {!simulatedReproduced && stuckInfo && (
-                <section style={{ marginBottom: '20px', border: '1px solid #e74c3c', padding: '10px' }}>
-                    <h3>Request for Input (from User)</h3>
+                <div className="card">
+                    <h3 style={{ color: '#721c24' }}>Request for Input (from User)</h3>
                     <p>{stuckInfo}</p>
-                </section>
+                </div>
             )}
 
             {simulatedReproduced && proposedSolution && (
-                <section style={{ marginBottom: '20px' }}>
+                 <div className="card">
                     <h3>Proposed Solution / Analysis</h3>
-                    <p>The following analysis is based on successful reproduction and simulated log/code cross-referencing:</p>
-                    <pre style={{ backgroundColor: '#eee', padding: '10px', borderRadius: '5px', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+                    <p style={{ fontSize: '0.95em', color: '#6c757d', marginBottom: '15px' }}>The following analysis is based on successful reproduction and simulated log/code cross-referencing:</p>
+                    <pre>
                         {proposedSolution}
                     </pre>
-                </section>
+                </div>
             )}
 
-            <section style={{ marginBottom: '20px' }}>
+            <div className="card">
                 <h3>Suggested Status Change</h3>
                  <label htmlFor="statusSuggest">Status: </label>
-                <select id="statusSuggest" value={suggestedStatus} onChange={(e) => setSuggestedStatus(e.target.value)} style={{ marginLeft: '10px', padding: '5px' }}>
+                <select id="statusSuggest" value={suggestedStatus} onChange={(e) => setSuggestedStatus(e.target.value)} style={{ marginLeft: '10px', padding: '5px', minWidth: '200px' }}>
                     {statusSuggestions.map((status) => (
                         <option key={status} value={status}>{status}</option>
                     ))}
                 </select>
-                 <p style={{ fontSize: '0.9em', color: '#555' }}>*LLM-generated suggestion, editable by user.*</p>
-            </section>
+                 <p style={{ fontSize: '0.9em', color: '#6c757d', marginTop: '5px' }}>*LLM-generated suggestion, editable by user.*</p>
+            </div>
 
-             <button onClick={handleReproduceAgain} style={{ marginTop: '20px', padding: '12px 25px', fontSize: '1.2em', backgroundColor: '#e67e22' }}>
+             <button onClick={handleReproduceAgain} style={{ marginTop: '10px', padding: '12px 25px', fontSize: '1.1em', backgroundColor: '#6c757d' }}>
                 Reproduce Again
             </button>
 
