@@ -14,6 +14,8 @@ import json
 import logging
 from pathlib import Path
 from typing import Dict, List, Any, Optional, Union
+import argparse
+import sys
 
 from google import genai
 from google.genai import types
@@ -25,7 +27,7 @@ from src.utils.json_utils import save_json, load_json
 class TaskGraphGenerator:
     """Class for generating task graphs from raw PDF extraction data using Gemini."""
     
-    def __init__(self, model_name: str = "gemini-2.5-pro-exp-03-25", 
+    def __init__(self, model_name: str = "gemini-2.5-pro-preview-03-25", 
                  output_dir: Optional[str] = None, 
                  log_level: int = logging.INFO):
         """Initialize the Task Graph Generator.
@@ -247,6 +249,7 @@ Remember: You MUST include detailed screenshot references in each step to guide 
             metadata = bug_data_package['bug_metadata']
             prompt_parts.append(f"BUG ID: {metadata.get('bug_id', 'Unknown')}")
             prompt_parts.append(f"TITLE: {metadata.get('bug_title', 'Unknown')}")
+            prompt_parts.append(f"TEST ENVIRONMENT URL: {metadata.get('test_environment_url', 'Not specified')}")
             prompt_parts.append(f"SEVERITY: {metadata.get('severity', {}).get('description', 'Unknown')}")
             prompt_parts.append(f"PRODUCT: {metadata.get('product', {}).get('name', 'Unknown')} {metadata.get('product', {}).get('version', {}).get('reported', 'Unknown')}")
             prompt_parts.append(f"CUSTOMER: {metadata.get('customer', {}).get('name', 'Unknown')}")
@@ -785,3 +788,76 @@ def generate_task_graph_from_raw_data(raw_data_package_path: str,
         "raw_data_package": raw_data_package,
         "task_graph": task_graph
     }
+
+# Main execution block when script is run directly
+if __name__ == "__main__":
+    # Setup a logger for the main execution script part if not already configured by imported modules
+    script_logger = logging.getLogger("task_graph_generation_script")
+    if not script_logger.hasHandlers():
+        logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+    parser = argparse.ArgumentParser(description="Run Task Graph Generation on Standardized Input Files.")
+    parser.add_argument("--input_dir", type=str, default="data/standardized_inputs",
+                        help="Directory containing the standardized input JSON files.")
+    parser.add_argument("--output_dir", type=str, default="data/task_graphs/generated",
+                        help="Directory to save the generated task graph JSON files. This is where the TaskGraphGenerator instance will save its output.")
+    # Add other arguments from TaskGraphGenerator.__init__ if you want to control them from CLI
+    # e.g., --model_name, --log_level for the generator instance
+    parser.add_argument("--model", type=str, default="gemini-2.5-pro-preview-03-25", help="Gemini model for the generator.")
+
+    args = parser.parse_args()
+
+    input_path = Path(args.input_dir)
+    output_path = Path(args.output_dir)
+    # The output_dir for individual files is handled by TaskGraphGenerator instance
+    # This script ensures the base output_dir for the run exists.
+    output_path.mkdir(parents=True, exist_ok=True)
+
+    if not input_path.is_dir():
+        script_logger.error(f"Input directory not found: {input_path}")
+        sys.exit(1) # Use sys.exit for script termination
+
+    script_logger.info(f"Scanning for standardized input files in: {input_path}")
+    json_files = list(input_path.glob("*_standard.json"))
+
+    if not json_files:
+        script_logger.warning(f"No '..._standard.json' files found in {input_path}")
+        sys.exit(0)
+
+    script_logger.info(f"Found {len(json_files)} files to process.")
+
+    if not os.getenv("GEMINI_API_KEY"):
+        script_logger.error("GEMINI_API_KEY environment variable not set. Cannot proceed.")
+        sys.exit(1)
+
+    for input_file_path in json_files:
+        script_logger.info(f"Processing file: {input_file_path.name}")
+        try:
+            # output_dir here tells TaskGraphGenerator where to save its file.
+            # The model_name from args is passed if TaskGraphGenerator init is modified to accept it,
+            # or if generate_task_graph_from_raw_data is modified to pass it through.
+            # For now, generate_task_graph_from_raw_data instantiates TaskGraphGenerator with its defaults.
+            # To use args.model, TaskGraphGenerator would need to be instantiated inside the loop or 
+            # generate_task_graph_from_raw_data adapted.
+            
+            # For simplicity, let's assume generate_task_graph_from_raw_data will use the default model 
+            # or we modify it to accept model_name later if needed.
+            # If TaskGraphGenerator class init is to be controlled by args.model and args.log_level etc.,
+            # then the instantiation in generate_task_graph_from_raw_data should be updated.
+
+            # We pass args.output_dir so each call to generate_task_graph_from_raw_data
+            # tells its TaskGraphGenerator instance where to save the specific graph.
+            result = generate_task_graph_from_raw_data(
+                raw_data_package_path=str(input_file_path),
+                output_dir=str(args.output_dir) # Pass the main output dir for this run
+            )
+            
+            if result["task_graph"].get("status") == "failed":
+                 script_logger.error(f"Task graph generation failed for {input_file_path.name}: {result['task_graph'].get('error')}")
+            else:
+                 script_logger.info(f"Successfully generated task graph for {input_file_path.name}")
+
+        except Exception as e:
+            script_logger.error(f"Error processing file {input_file_path.name}: {e}", exc_info=True)
+
+    script_logger.info("Task graph generation run complete.")
