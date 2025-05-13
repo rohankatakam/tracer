@@ -1,59 +1,86 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
 // --- Dummy Data ---
-const dummyBugs = [
-  {
-    id: 'SV-20250411',
-    title: 'JSON Tampering Exploit in Purchase Order Approval Workflow',
-    severity: 'Critical',
-    status: 'Open',
-    product: 'ProcureWave v3.2.7',
-    reportedBy: 'Acme Industries'
-  },
-  {
-    id: 'UI-20250320',
-    title: 'User Profile Image Upload Fails with Large Files',
-    severity: 'High',
-    status: 'Open',
-    product: 'ConnectSphere v1.5.0',
-    reportedBy: 'Beta Testers Inc.'
-  },
-  {
-    id: 'DB-20250401',
-    title: 'Race Condition During Account Balance Update',
-    severity: 'Medium',
-    status: 'In Progress',
-    product: 'FinanceCore v2.1',
-    reportedBy: 'Internal QA'
-  },
-  {
-    id: 'FE-20250415',
-    title: 'Incorrect Currency Formatting on Checkout Page',
-    severity: 'Low',
-    status: 'Open',
-    product: 'ShopEasy v4.0.1',
-    reportedBy: 'Customer Support'
-  }
-];
+// const dummyBugs = [ ... ]; // REMOVE THIS
 // --- End Dummy Data ---
 
-const getSeverityStyle = (severity) => {
-  switch (severity?.toLowerCase()) {
+// Function to get badge class based on severity
+const getSeverityBadgeClass = (severity) => {
+  const severityLower = severity?.toLowerCase();
+  switch (severityLower) {
     case 'critical':
-      return { color: '#dc3545', fontWeight: 'bold' }; // Red
+      return 'badge-critical';
     case 'high':
-      return { color: '#fd7e14' }; // Orange
+      return 'badge-high';
     case 'medium':
-      return { color: '#ffc107' }; // Yellow
+      return 'badge-medium';
     case 'low':
-      return { color: '#17a2b8' }; // Cyan/Blue
+      return 'badge-low';
     default:
-      return {};
+      return 'badge-neutral';
   }
 };
 
+// Function to get badge class for status (can be expanded)
+const getStatusBadgeClass = (status) => {
+  // Simple for now, can be expanded with more status types and colors
+  return 'badge-status'; 
+};
+
 function BugListPage() {
+  // State for bugs, loading, and errors
+  const [bugs, setBugs] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fetch bugs from API on component mount
+  useEffect(() => {
+    const fetchBugs = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        // Use the new API endpoint
+        const response = await fetch('http://localhost:5001/api/bugs'); 
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        setBugs(data); // Set the fetched bugs
+      } catch (e) {
+        setError(e.message);
+        setBugs([]); // Clear bugs on error
+        console.error("Failed to fetch bugs:", e); // Log error
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchBugs();
+  }, []); // Empty dependency array means this runs once on mount
+
+  if (isLoading) {
+    return (
+      <div>
+        <div className="page-header">
+          <h1>Outstanding Bugs</h1>
+        </div>
+        <p>Loading bugs...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div>
+        <div className="page-header">
+          <h1>Outstanding Bugs</h1>
+        </div>
+        <p style={{ color: 'red' }}>Error loading bugs: {error}</p>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="page-header">
@@ -70,17 +97,31 @@ function BugListPage() {
           </tr>
         </thead>
         <tbody>
-          {dummyBugs.map((bug) => (
-            <tr key={bug.id}>
-              <td>
-                <Link to={`/bugs/${bug.id}`}>{bug.id}</Link>
-              </td>
-              <td>{bug.title}</td>
-              <td style={getSeverityStyle(bug.severity)}>{bug.severity}</td>
-              <td>{bug.status}</td>
-              <td>{bug.product}</td>
+          {bugs.length === 0 ? (
+            <tr>
+              <td colSpan="5">No bugs found.</td>
             </tr>
-          ))}
+          ) : (
+            bugs.map((bug) => (
+              <tr key={bug.id}>
+                <td>
+                  <Link to={`/bugs/${bug.id}`}>{bug.id}</Link>
+                </td>
+                <td>{bug.title}</td>
+                <td>
+                  <span className={`badge ${getSeverityBadgeClass(bug.severity)}`}>
+                    {bug.severity}
+                  </span>
+                </td>
+                <td>
+                  <span className={`badge ${getStatusBadgeClass(bug.status?.description)}`}>
+                    {bug.status?.description || 'N/A'}
+                  </span>
+                </td>
+                <td>{bug.product}</td>
+              </tr>
+            ))
+          )}
         </tbody>
       </table>
     </div>

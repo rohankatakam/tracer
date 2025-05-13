@@ -54,95 +54,240 @@
 /* --- Node & Tooltip Styles --- */
 .custom-node { 
   background: #ffffff;
-  padding: 15px 25px; 
+  padding: 10px 15px; /* Reduced padding */
   border-radius: 8px; 
-  border: 2px solid #adb5bd; 
+  border: 1px solid #d1d9e0; 
   font-family: inherit;
-  font-size: 1em; 
-  min-width: 220px; 
-  text-align: center;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-  transition: all 0.3s ease-in-out;
-  opacity: 0.7;
+  font-size: 0.85em; /* Slightly reduced base font size */
+  min-width: 160px; /* Reduced min-width */
+  max-width: 220px; /* Reduced max-width */
+  text-align: left;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03); 
+  transition: all 0.2s ease-in-out;
   position: relative; 
 }
 
-.node-label {
+.custom-node .node-label { 
     font-weight: 600;
-    margin-bottom: 5px;
-    color: #343a40;
+    margin-bottom: 4px; /* Reduced margin */
+    color: #212529; 
+    font-size: 0.95em; /* Reduced font size for label */
+    border-bottom: 1px solid #e9ecef;
+    padding-bottom: 4px; /* Reduced padding */
+}
+
+.custom-node .node-content { 
+    font-size: 0.95em;
+    color: #495057;
+    white-space: pre-wrap; 
+    word-break: break-word;
+    line-height: 1.4; /* Improved line height for readability */
 }
 
 .custom-node:hover {
-   box-shadow: 0 6px 18px rgba(0,0,0,0.15);
-   border-color: #495057;
-   opacity: 1;
+   box-shadow: 0 5px 15px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04); /* Enhanced hover shadow */
+   border-color: #007bff; 
+   transform: translateY(-2px); /* Slight lift on hover */
 }
 
 /* Current Node Styling */
-.custom-node.current {
-  border-color: #007bff; 
-  background-color: #e7f3ff; 
-  box-shadow: 0 0 0 4px rgba(0, 123, 255, 0.25), 0 5px 15px rgba(0,0,0,0.15); 
+.custom-node.current, .custom-node.blinking {
+  border-color: #6610f2; /* Primary violet for current/blinking border */
+  background-color: #f4f0ff; /* Lighter violet background */
+  box-shadow: 0 0 0 3px rgba(102, 16, 242, 0.25), 0 4px 12px rgba(0,0,0,0.15); /* More pronounced shadow */
   opacity: 1;
-  transform: scale(1.03); 
-  z-index: 10; 
+  transform: scale(1.03) translateY(-1px); /* Slightly more pronounced scale and lift */
+  z-index: 10;
 }
 
-.custom-node.current .node-label {
-    color: #0056b3; 
+.custom-node.current .node-label, .custom-node.blinking .node-label {
+    color: #4B0082;
+    border-bottom-color: rgba(102, 16, 242, 0.3); /* Match current border color tone */
 }
 
-/* Completed Node Styling */
-.custom-node.completed {
-  border-color: #28a745; 
-  background-color: #e9f7ef; 
-  opacity: 0.9; 
+/* Blinking effect specific adjustments */
+.blinking {
+  animation: focused-blink 1.8s infinite ease-in-out;
 }
 
-.custom-node.completed .node-label {
-    color: #155724; 
-    text-decoration: line-through;
-}
-
+/* Completed Node Styling (Example, if you implement this state) */
+/* ... existing code ... */
 .node-tooltip {
   position: absolute;
-  left: calc(100% + 12px); 
+  left: calc(100% + 12px); /* Increased distance slightly */
   top: 0;
-  width: 300px; 
-  background-color: #343a40; 
-  color: #e9ecef; 
-  padding: 15px;
-  border-radius: 6px;
-  font-size: 0.9em;
-  z-index: 100; 
-  opacity: 0.97; 
+  width: 300px; /* Slightly wider */
+  background-color: #343a40; /* Slightly lighter dark */
+  color: #f8f9fa; 
+  padding: 14px 18px; /* Adjusted padding */
+  border-radius: 6px; /* Consistent radius */
+  font-size: 0.88em; /* Adjusted font size */
+  z-index: 1000; 
+  opacity: 0; 
   pointer-events: none; 
   white-space: normal; 
-  box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25); /* Softer shadow for tooltip */
   border: none; 
+  transition: opacity 0.25s ease-in-out, transform 0.25s ease-in-out;
+  transform: translateX(-8px); /* Start further to the left for a more noticeable transition */
+}
+
+.custom-node:hover .node-tooltip, .custom-node.tooltip-active .node-tooltip {
+  opacity: 1; /* Full opacity */
+  transform: translateX(0);
 }
 
 .node-tooltip strong {
   color: #adb5bd; 
   display: block; 
-  margin-bottom: 2px;
-  font-weight: 500;
+  margin-bottom: 4px; /* Slightly more margin */
+  font-weight: 600; /* Bolder strong */
 }
 
 /* Blinking effect for current node */
-@keyframes subtle-blink {
+@keyframes focused-blink { /* Renamed from subtle-blink for clarity */
   0%, 100% { 
-    border-color: #007bff; 
-    box-shadow: 0 0 8px rgba(0, 123, 255, 0.5), 0 2px 6px rgba(0,0,0,0.08); 
+    border-color: #6610f2; /* Violet */
+    box-shadow: 0 0 0 3px rgba(102, 16, 242, 0.25), 
+                0 0 10px rgba(102, 16, 242, 0.4), /* Inner glow */
+                0 4px 12px rgba(0,0,0,0.15); 
   }
   50% { 
-    border-color: #6610f2; /* Violet */
-    box-shadow: 0 0 12px rgba(102, 16, 242, 0.6), 0 2px 6px rgba(0,0,0,0.08); 
+    border-color: #007bff; /* Blue */
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25), 
+                0 0 16px rgba(0, 123, 255, 0.5), /* More prominent inner glow */
+                0 6px 16px rgba(0,0,0,0.2); 
   }
+} 
+
+/* Category-based styling for nodes - ensure good contrast with new base */
+.custom-node.category-setup {
+  background-color: #e6fff2; /* Lighter green */
+  border-color: #99e6b3;
+}
+.custom-node.category-setup .node-label {
+  color: #155724;
 }
 
-.blinking {
-  animation: subtle-blink 1.8s infinite ease-in-out;
-  border-width: 2px;
+.custom-node.category-action, .custom-node.category-interaction, .custom-node.category-input {
+  background-color: #e7f3ff; /* Light blue (default current) */
+  border-color: #a0cfff;
+}
+.custom-node.category-action .node-label,
+.custom-node.category-interaction .node-label,
+.custom-node.category-input .node-label {
+  color: #004085; /* Darker blue for label */
+}
+
+.custom-node.category-observation {
+  background-color: #fffbeb; /* Lighter yellow */
+  border-color: #ffe599;
+}
+.custom-node.category-observation .node-label {
+  color: #856404; /* Darker yellow for label */
+}
+
+.custom-node.category-verification {
+  background-color: #e2f0d9; /* Another shade of green */
+  border-color: #a8d8b9;
+}
+.custom-node.category-verification .node-label {
+  color: #155724; /* Consistent with original */
+}
+
+.custom-node.category-vulnerability_step {
+  background-color: #fdecea; /* Lighter red */
+  border-color: #f8c1c7;
+}
+.custom-node.category-vulnerability_step .node-label {
+  color: #721c24; /* Consistent with original */
+}
+
+/* Ensure current/blinking overrides category colors if needed, or blends */
+/* The .custom-node.current rule above already handles background-color and border-color */
+/* We just need to make sure its label color takes precedence or is specifically set for current */
+.custom-node.current .node-label, .custom-node.blinking .node-label {
+    color: #4B0082; /* Indigo for current label - this should already be there and take precedence due to specificity */
+    border-bottom-color: rgba(102, 16, 242, 0.3); /* Match current border color tone */
+} 
+
+/* --- Main Page Layout Styles --- */
+.tracer-page-container {
+  display: flex;
+  height: calc(100vh - 70px); /* Assuming a header of approx 70px, adjust as needed. Or use 90vh for simplicity */
+  gap: 15px;
+  padding: 15px;
+  box-sizing: border-box;
+  background-color: #e9ecef; /* Light gray background for the page */
+}
+
+.reactflow-panel {
+  flex: 3;
+  border: 1px solid #dee2e6; 
+  border-radius: 8px; /* Slightly more pronounced radius */
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background-color: #ffffff; /* Panel background */
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  overflow: hidden; /* Ensure children like ReactFlow Controls don't overflow weirdly */
+}
+
+.simulation-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 20px; /* Increased padding */
+  background-color: #ffffff;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  overflow-y: auto; /* Allow scrolling if content exceeds height */
+}
+
+/* Wrapper for ReactFlow component to ensure it takes full space */
+.reactflow-wrapper {
+  flex-grow: 1; /* Takes up all available vertical space in reactflow-panel */
+  width: 100%;
+  height: 100%;
+}
+
+.simulation-panel h3 {
+  margin-top: 0;
+  color: #343a40;
+  border-bottom: 1px solid #e9ecef;
+  padding-bottom: 10px;
+  margin-bottom: 15px;
+}
+
+.simulation-panel h4 {
+  color: #495057;
+  margin-top: 15px;
+  margin-bottom: 8px;
+}
+
+.simulation-panel button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  font-weight: 500;
+}
+
+.simulation-panel button:hover {
+  background-color: #0056b3;
+}
+
+.simulation-panel button:disabled {
+  background-color: #ced4da;
+  cursor: not-allowed;
+}
+
+.simulation-panel .status-text {
+  margin-left: 10px;
+  font-size: 0.9em;
+  color: #6c757d;
 } 

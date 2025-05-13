@@ -25,7 +25,7 @@ from src.utils.json_utils import save_json, load_json
 class TaskGraphGenerator:
     """Class for generating task graphs from raw PDF extraction data using Gemini."""
     
-    def __init__(self, model_name: str = "gemini-2.5-pro-exp-03-25", 
+    def __init__(self, model_name: str = "gemini-2.5-pro-preview-03-25", 
                  output_dir: Optional[str] = None, 
                  log_level: int = logging.INFO):
         """Initialize the Task Graph Generator.
@@ -92,6 +92,7 @@ OUTPUT FORMAT - YOU MUST USE THIS EXACT STRUCTURE:
         "id": "1",
         "type": "action",
         "content": "[DETAILED step description, e.g., 'Click the Login button in the top-right corner of the screen']",
+        "category": "setup",
         "metadata": {
           "image_refs": ["page_2_img_1.jpeg"],  // List of referenced screenshots for this step
           "ui_elements": ["Login button"],      // UI elements to interact with
@@ -418,6 +419,7 @@ Please generate a complete task graph following the OUTPUT FORMAT provided in th
                                         "id": genai.types.Schema(type=genai.types.Type.STRING),
                                         "type": genai.types.Schema(type=genai.types.Type.STRING),
                                         "content": genai.types.Schema(type=genai.types.Type.STRING),
+                                        "category": genai.types.Schema(type=genai.types.Type.STRING),
                                         "metadata": genai.types.Schema(
                                             type=genai.types.Type.OBJECT,
                                             properties={
@@ -628,6 +630,7 @@ Please generate a complete task graph following the OUTPUT FORMAT provided in th
                             "id": step_num,
                             "type": "action",
                             "content": content.strip(),
+                            "category": "setup",
                             "metadata": {}
                         })
                         seen_step_nums.add(step_num)
@@ -643,6 +646,7 @@ Please generate a complete task graph following the OUTPUT FORMAT provided in th
                             "id": str(i+1),
                             "type": "action",
                             "content": paragraph,
+                            "category": "setup",
                             "metadata": {}
                         })
                 
