@@ -61,23 +61,23 @@ async def get_task_graph(bug_id: str): # Use async def for FastAPI routes if the
          logger.error("Core generation/loading functions not imported correctly.")
          raise HTTPException(status_code=500, detail="Internal server error: Core functions not available.")
 
-    # # --- Caching Logic --- 
-    # cached_graph_file_name = f"{bug_id}_task_graph.json"
-    # cached_graph_path = DEFAULT_TASK_GRAPH_OUTPUT_DIR / cached_graph_file_name
+    # --- Caching Logic --- 
+    cached_graph_file_name = f"{bug_id}_task_graph.json"
+    cached_graph_path = DEFAULT_TASK_GRAPH_OUTPUT_DIR / cached_graph_file_name
 
-    # if cached_graph_path.is_file():
-    #     try:
-    #         logger.info(f"Returning cached task graph for {bug_id} from {cached_graph_path}")
-    #         cached_data = load_json(str(cached_graph_path))
-    #         # Ensure the cached data is the task_graph part itself, or adjust as needed.
-    #         # If generate_task_graph_from_raw_data saves the whole result object, 
-    #         # then the API should return result.get("task_graph") from cache too.
-    #         # For now, assuming the file IS the task_graph.
-    #         # Let's assume the file contains the direct task_graph object as expected by frontend
-    #         return cached_data 
-    #     except Exception as e:
-    #         logger.warning(f"Error loading cached task graph for {bug_id} from {cached_graph_path}: {e}. Will regenerate.")
-    # # --- End Caching Logic ---
+    if cached_graph_path.is_file():
+        try:
+            logger.info(f"Returning cached task graph for {bug_id} from {cached_graph_path}")
+            cached_data = load_json(str(cached_graph_path))
+            # Ensure the cached data is the task_graph part itself, or adjust as needed.
+            # If generate_task_graph_from_raw_data saves the whole result object, 
+            # then the API should return result.get("task_graph") from cache too.
+            # For now, assuming the file IS the task_graph.
+            # Let's assume the file contains the direct task_graph object as expected by frontend
+            return cached_data 
+        except Exception as e:
+            logger.warning(f"Error loading cached task graph for {bug_id} from {cached_graph_path}: {e}. Will regenerate.")
+    # --- End Caching Logic ---
 
     input_file_name = f"{bug_id}_standard.json"
     input_file_path = DEFAULT_INPUT_DIR / input_file_name

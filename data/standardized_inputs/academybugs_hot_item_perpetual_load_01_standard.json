@@ -1,0 +1,54 @@
+{
+  "bug_metadata": {
+    "bug_id": "academybugs_hot_item_perpetual_load_01",
+    "bug_title": "Clicking 'HOT ITEM' on product page leads to perpetual loading",
+    "test_environment_url": "https://academybugs.com/find-bugs/",
+    "severity": {
+      "level": 0,
+      "description": "Test Case"
+    },
+    "status": {
+      "code": "0",
+      "description": "New"
+    },
+    "customer": {
+      "name": "N/A",
+      "environment": "Web"
+    },
+    "product": {
+      "id": "N/A",
+      "name": "AcademyBugs.com",
+      "version": {
+        "reported": "Unknown",
+        "component_ver": "",
+        "fixed_ver": ""
+      }
+    },
+    "component": {
+      "name": "Clicking 'HOT ITEM' on product page leads to perpetual loading",
+      "type": "",
+      "subcomponent": ""
+    },
+    "dates": {
+      "created": "2025-05-12T22:57:19.701728",
+      "updated": "2025-05-12T22:57:19.701728",
+      "fix_eta": ""
+    },
+    "reporter": "Test Case Definition",
+    "assignee": "N/A"
+  },
+  "bug_content": {
+    "description": "",
+    "steps_to_reproduce": "1. Open a new Firefox browser window.\n2. Navigate to the 'Find Bugs' page: https://academybugs.com/find-bugs/ .\n3. Identify and click on any product link (e.g., 'Silver Heart Bracelet') to navigate to its product detail page.\n4. On the product detail page, locate the 'HOT ITEM' section, usually displayed in a sidebar with an image of a product.\n5. Click on the 'HOT ITEM' image or its associated link.\n6. Observe the main content area of the page and the browser's loading indicators.\n7. (Optional CUA Instruction - if capable) Attempt to open browser developer tools and check the console and network tabs for continuously pending requests or JavaScript errors.",
+    "expected_outcome": "The page (or a significant portion of it) enters a perpetual loading state (e.g., a spinner icon remains indefinitely, browser tab shows loading animation) and does not resolve to display new content or return to an idle state.",
+    "additional_info": "Source: AcademyBugs.com - Clicking 'HOT ITEM' on product page leads to perpetual loading. Original Description: On a product detail page, clicking the 'HOT ITEM' image/link in the sidebar causes the page/section to load perpetually.",
+    "reproducible": {
+      "by_customer": true,
+      "by_support": false,
+      "environment": "Web (Automated Test)"
+    }
+  },
+  "attachments": [],
+  "comments": [],
+  "history": []
+}

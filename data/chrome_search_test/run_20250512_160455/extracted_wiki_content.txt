@@ -1,0 +1,9 @@
+Extraction time: 2025-05-12T16:05:59.715731
+URL: https://en.wikipedia.org/wiki/Larry_Ellison
+Title: Larry Ellison - Wikipedia
+
+FIRST PARAGRAPH:
+Lawrence Joseph Ellison (born August 17, 1944) is an American businessman and entrepreneur who co-founded software company Oracle Corporation. He was Oracle's chief executive officer from 1977 to 2014 and is now its chief technology officer and executive chairman.
+
+PERSONAL LIFE SECTION:
+Personal Life section not found.

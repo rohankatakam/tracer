@@ -1,0 +1,54 @@
+{
+  "bug_metadata": {
+    "bug_id": "academybugs_twitter_share_nxdomain_01",
+    "bug_title": "X/Twitter social share link leads to DNS_PROBE_FINISHED_NXDOMAIN",
+    "test_environment_url": "https://academybugs.com/find-bugs/",
+    "severity": {
+      "level": 0,
+      "description": "Test Case"
+    },
+    "status": {
+      "code": "0",
+      "description": "New"
+    },
+    "customer": {
+      "name": "N/A",
+      "environment": "Web"
+    },
+    "product": {
+      "id": "N/A",
+      "name": "AcademyBugs.com",
+      "version": {
+        "reported": "Unknown",
+        "component_ver": "",
+        "fixed_ver": ""
+      }
+    },
+    "component": {
+      "name": "X/Twitter social share link leads to DNS_PROBE_FINISHED_NXDOMAIN",
+      "type": "",
+      "subcomponent": ""
+    },
+    "dates": {
+      "created": "2025-05-12T22:57:19.701544",
+      "updated": "2025-05-12T22:57:19.701544",
+      "fix_eta": ""
+    },
+    "reporter": "Test Case Definition",
+    "assignee": "N/A"
+  },
+  "bug_content": {
+    "description": "",
+    "steps_to_reproduce": "1. Open a new Firefox browser window.\n2. Navigate to the 'Find Bugs' page: https://academybugs.com/find-bugs/ .\n3. Identify and click on the first available product link (e.g., 'DNK Yellow Shoes') to navigate to its product detail page.\n4. On the product detail page, locate the social media share icon for 'X' (formerly Twitter).\n5. Click the 'X' (Twitter) social share icon.\n6. Observe the browser. Note any new tabs opened and error messages displayed.\n7. (Optional CUA Instruction - if capable) Attempt to open browser developer tools and check the console and network tabs for specific error details.",
+    "expected_outcome": "The browser displays a 'This site can't be reached' error page with a DNS_PROBE_FINISHED_NXDOMAIN message, instead of navigating to a Twitter sharing interface.",
+    "additional_info": "Source: AcademyBugs.com - X/Twitter social share link leads to DNS_PROBE_FINISHED_NXDOMAIN. Original Description: Clicking the X/Twitter social share button on a product page results in a DNS_PROBE_FINISHED_NXDOMAIN error.",
+    "reproducible": {
+      "by_customer": true,
+      "by_support": false,
+      "environment": "Web (Automated Test)"
+    }
+  },
+  "attachments": [],
+  "comments": [],
+  "history": []
+}

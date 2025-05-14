@@ -1,0 +1,156 @@
+{
+  "name": "bug_academybugs_twitter_share_nxdomain_01",
+  "description": "Clicking the X/Twitter social share button on a product page on AcademyBugs.com results in a DNS_PROBE_FINISHED_NXDOMAIN error.",
+  "environment": {
+    "application": "AcademyBugs.com",
+    "browser": "Firefox"
+  },
+  "task_graph": {
+    "nodes": [
+      {
+        "id": "1",
+        "type": "action",
+        "content": "Launch a new instance of the Firefox browser.",
+        "category": "setup",
+        "metadata": {
+          "image_refs": [],
+          "ui_elements": [
+            "Firefox browser application"
+          ],
+          "inputs": [],
+          "expected_result": "A new Firefox browser window is open and active."
+        }
+      },
+      {
+        "id": "2",
+        "type": "action",
+        "content": "In the Firefox address bar, type 'https://academybugs.com/find-bugs/' and press Enter to navigate to the page.",
+        "category": "setup",
+        "metadata": {
+          "image_refs": [],
+          "ui_elements": [
+            "Firefox address bar"
+          ],
+          "inputs": [
+            "url=https://academybugs.com/find-bugs/"
+          ],
+          "expected_result": "The 'Find Bugs' page on AcademyBugs.com is loaded and displayed in the browser."
+        }
+      },
+      {
+        "id": "3",
+        "type": "action",
+        "content": "On the 'Find Bugs' page (https://academybugs.com/find-bugs/), locate the list of products. Click on the name or link of the first product available in the list (e.g., 'DNK Yellow Shoes').",
+        "category": "reproduction",
+        "metadata": {
+          "image_refs": [],
+          "ui_elements": [
+            "Product list",
+            "First product link"
+          ],
+          "inputs": [],
+          "expected_result": "The product detail page for the selected product is loaded and displayed."
+        }
+      },
+      {
+        "id": "4",
+        "type": "action",
+        "content": "On the loaded product detail page, find the section for social media sharing. Identify the icon representing 'X' (formerly Twitter).",
+        "category": "reproduction",
+        "metadata": {
+          "image_refs": [],
+          "ui_elements": [
+            "Social media share icons section",
+            "X/Twitter share icon"
+          ],
+          "inputs": [],
+          "expected_result": "The 'X' (Twitter) social share icon is located on the page."
+        }
+      },
+      {
+        "id": "5",
+        "type": "action",
+        "content": "Click the 'X' (Twitter) social share icon.",
+        "category": "reproduction",
+        "metadata": {
+          "image_refs": [],
+          "ui_elements": [
+            "X/Twitter share icon"
+          ],
+          "inputs": [],
+          "expected_result": "The browser attempts to open a new tab or navigate the current tab to a Twitter sharing URL."
+        }
+      },
+      {
+        "id": "6",
+        "type": "action",
+        "content": "Observe the browser's current tab or any newly opened tab for an error page.",
+        "category": "reproduction",
+        "metadata": {
+          "image_refs": [],
+          "ui_elements": [
+            "Browser tab content area",
+            "Error message display"
+          ],
+          "inputs": [],
+          "expected_result": "The browser displays an error page stating 'This site can't be reached' with a 'DNS_PROBE_FINISHED_NXDOMAIN' error code."
+        }
+      },
+      {
+        "id": "7",
+        "type": "action",
+        "content": "(Optional) Open the browser's developer tools (typically by pressing F12). Navigate to the 'Console' and 'Network' tabs to look for specific DNS-related errors (e.g., NXDOMAIN).",
+        "category": "debugging",
+        "metadata": {
+          "image_refs": [],
+          "ui_elements": [
+            "Browser developer tools",
+            "Console tab",
+            "Network tab"
+          ],
+          "inputs": [],
+          "expected_result": "Developer tools console or network tab shows errors related to DNS resolution for the Twitter share link domain."
+        }
+      }
+    ],
+    "edges": [
+      {
+        "source": "1",
+        "target": "2"
+      },
+      {
+        "source": "2",
+        "target": "3"
+      },
+      {
+        "source": "3",
+        "target": "4"
+      },
+      {
+        "source": "4",
+        "target": "5"
+      },
+      {
+        "source": "5",
+        "target": "6"
+      },
+      {
+        "source": "6",
+        "target": "7"
+      }
+    ]
+  },
+  "verification_steps": [
+    "Confirm that after clicking the X/Twitter share icon on a product page, the browser displays an error page with the message 'This site can't be reached' and the error code 'DNS_PROBE_FINISHED_NXDOMAIN'."
+  ],
+  "confidence_score": 0.9,
+  "missing_information": [
+    "Screenshots of the 'Find Bugs' page showing product links.",
+    "Screenshot of a product detail page highlighting the 'X' (Twitter) social share icon.",
+    "Screenshot of the browser displaying the 'This site can't be reached' error page with the DNS_PROBE_FINISHED_NXDOMAIN message."
+  ],
+  "source": {
+    "model": "gemini-2.5-pro-preview-03-25",
+    "raw_data_package": "unknown"
+  }
+}

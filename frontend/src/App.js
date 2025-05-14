@@ -10,6 +10,7 @@ import BugListPage from './pages/BugListPage';
 import BugDetailPage from './pages/BugDetailPage';
 import TracerPage from './pages/TracerPage';
 import ResultsPage from './pages/ResultsPage';
+import DemoPlayerPage from './pages/DemoPlayerPage';
 import './App.css'; // App-specific styles
 
 function App() {
@@ -35,6 +36,7 @@ function App() {
             <Route path="/bugs/:bugId" element={<BugDetailPage />} />
             <Route path="/tracer/:bugId/run" element={<TracerPage />} />
             <Route path="/tracer/:bugId/results" element={<ResultsPage />} />
+            <Route path="/task-flow" element={<DemoPlayerPage />} />
           </Routes>
         </main>
       </div>

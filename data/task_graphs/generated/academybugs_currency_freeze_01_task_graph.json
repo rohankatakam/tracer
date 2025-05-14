@@ -1,0 +1,100 @@
+{
+  "name": "bug_academybugs_currency_freeze_01",
+  "description": "Website freezes when changing currency on a product detail page.",
+  "environment": {
+    "application": "AcademyBugs.com Unknown version",
+    "browser": "Web Browser (unspecified version)",
+    "operating_system": "Any (unspecified version)"
+  },
+  "task_graph": {
+    "nodes": [
+      {
+        "id": "1",
+        "type": "action",
+        "content": "Navigate to the 'Find Bugs' page by opening the URL: https://academybugs.com/find-bugs/",
+        "category": "setup",
+        "metadata": {
+          "image_refs": [],
+          "ui_elements": [
+            "Browser address bar"
+          ],
+          "inputs": [
+            "url=https://academybugs.com/find-bugs/"
+          ],
+          "expected_result": "The 'Find Bugs' page (https://academybugs.com/find-bugs/) is loaded and displayed."
+        }
+      },
+      {
+        "id": "2",
+        "type": "action",
+        "content": "Identify the first product displayed on the 'Find Bugs' page (e.g., 'DNK Yellow Shoes') and click its link to navigate to the product detail page.",
+        "category": "reproduction",
+        "metadata": {
+          "image_refs": [],
+          "ui_elements": [
+            "First product link on the page"
+          ],
+          "inputs": [],
+          "expected_result": "The product detail page for the selected product is loaded and displayed."
+        }
+      },
+      {
+        "id": "3",
+        "type": "action",
+        "content": "On the product detail page, locate the dropdown menu used for currency selection and click it to reveal the currency options.",
+        "category": "reproduction",
+        "metadata": {
+          "image_refs": [],
+          "ui_elements": [
+            "Currency selection dropdown menu"
+          ],
+          "inputs": [],
+          "expected_result": "The currency selection dropdown menu expands, showing available currency options."
+        }
+      },
+      {
+        "id": "4",
+        "type": "action",
+        "content": "From the expanded currency dropdown menu, click on a currency option that is different from the one currently active (e.g., if 'USD' is active, select 'EUR' or 'GBP').",
+        "category": "reproduction",
+        "metadata": {
+          "image_refs": [],
+          "ui_elements": [
+            "Currency option in dropdown (e.g., EUR, GBP)"
+          ],
+          "inputs": [
+            "selected_currency=EUR"
+          ],
+          "expected_result": "The website becomes unresponsive or freezes."
+        }
+      }
+    ],
+    "edges": [
+      {
+        "source": "1",
+        "target": "2"
+      },
+      {
+        "source": "2",
+        "target": "3"
+      },
+      {
+        "source": "3",
+        "target": "4"
+      }
+    ]
+  },
+  "verification_steps": [
+    "After attempting to change the currency as described in step 4 of the task graph (clicking a different currency in the dropdown on the product detail page), observe the application.",
+    "Confirm that the website interface has become unresponsive or frozen, preventing further interaction."
+  ],
+  "confidence_score": 0.9,
+  "missing_information": [
+    "Screenshots of the 'Find Bugs' page, product detail page, and currency dropdown for visual reference.",
+    "Specific UI element locators (e.g., CSS selectors, XPaths) for the product links, currency dropdown, and currency options, which would be necessary for precise automation."
+  ],
+  "source": {
+    "model": "gemini-2.5-pro-preview-03-25",
+    "raw_data_package": "unknown"
+  }
+}

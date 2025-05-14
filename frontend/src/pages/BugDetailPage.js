@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { demoBugId } from './demoData'; // Import demoBugId to compare
 
 // --- Dummy Data (could be fetched based on bugId) ---
 // const dummyBugDetails = { ... }; // REMOVE THIS
@@ -10,9 +12,12 @@ function BugDetailPage() {
   const navigate = useNavigate();
   
   // State for bug details, loading, and error
-  const [bug, setBug] = useState(null);
+  const [bugDetails, setBugDetails] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // The ID of the bug that has the special hardcoded demo task flow
+  const bugIdForSpecialDemo = demoBugId.replace('_demo', ''); // Should be 'academybugs_twitter_share_nxdomain_01'
 
   // Fetch bug details from API on component mount or when bugId changes
   useEffect(() => {
@@ -27,10 +32,10 @@ function BugDetailPage() {
           throw new Error(errorData.description || `HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
-        setBug(data); // Set the fetched bug details
+        setBugDetails(data); // Set the fetched bug details
       } catch (e) {
         setError(e.message);
-        setBug(null);
+        setBugDetails(null);
         console.error(`Failed to fetch bug details for ${bugId}:`, e);
       } finally {
         setIsLoading(false);
@@ -57,7 +62,7 @@ function BugDetailPage() {
   }
 
   // More robust check: ensure bug and bug.bug_metadata exist before proceeding
-  if (!bug || !bug.bug_metadata) { 
+  if (!bugDetails || !bugDetails.bug_metadata) { 
     return (
         <div>
             <h2>Bug Data Not Available</h2>
@@ -67,82 +72,88 @@ function BugDetailPage() {
     );
   }
 
-  const handleRunTracer = () => {
-    navigate(`/tracer/${bugId}/run`);
+  const handleRunAction = () => {
+    if (bugId === bugIdForSpecialDemo) {
+      // For the specific Twitter bug, navigate to the new task-flow route
+      navigate('/task-flow'); 
+    } else {
+      // For all other bugs, go to the live tracer page
+      navigate(`/tracer/${bugId}/run`);
+    }
   };
 
   return (
     <div>
       <div className="page-header">
-        <h1>Bug Detail: {bug.bug_metadata.bug_id || bugId}</h1> 
+        <h1>Bug Detail: {bugDetails.bug_metadata.bug_id || bugId}</h1> 
       </div>
       
       <div className="card" style={{ marginBottom: '25px' }}> {/* Main details card */}
-        <h2>{bug.bug_metadata.bug_title || 'No Title'}</h2>
+        <h2>{bugDetails.bug_metadata.bug_title || 'No Title'}</h2>
         <p>
-          <strong>Severity:</strong> <span className={`badge ${getSeverityBadgeClass(bug.bug_metadata.severity?.description || bug.bug_metadata.severity)}`}>{bug.bug_metadata.severity?.description || bug.bug_metadata.severity || 'N/A'}</span> |
-          <strong> Status:</strong> <span className={`badge ${getStatusBadgeClass(bug.bug_metadata.status?.description || bug.bug_metadata.status)}`}>{bug.bug_metadata.status?.description || bug.bug_metadata.status || 'N/A'}</span>
+          <strong>Severity:</strong> <span className={`badge ${getSeverityBadgeClass(bugDetails.bug_metadata.severity?.description || bugDetails.bug_metadata.severity)}`}>{bugDetails.bug_metadata.severity?.description || bugDetails.bug_metadata.severity || 'N/A'}</span> |
+          <strong> Status:</strong> <span className={`badge ${getStatusBadgeClass(bugDetails.bug_metadata.status?.description || bugDetails.bug_metadata.status)}`}>{bugDetails.bug_metadata.status?.description || bugDetails.bug_metadata.status || 'N/A'}</span>
         </p>
         <p>
-          <strong>Product:</strong> {bug.bug_metadata.product?.name || 'N/A'} |
-          <strong> Reported By:</strong> {bug.bug_metadata.customer?.name || bug.bug_metadata.reportedBy || 'N/A'} 
-          {bug.bug_metadata.reportedDate && `on ${bug.bug_metadata.reportedDate}`}
+          <strong>Product:</strong> {bugDetails.bug_metadata.product?.name || 'N/A'} |
+          <strong> Reported By:</strong> {bugDetails.bug_metadata.customer?.name || bugDetails.bug_metadata.reportedBy || 'N/A'} 
+          {bugDetails.bug_metadata.reportedDate && `on ${bugDetails.bug_metadata.reportedDate}`}
         </p>
       </div>
 
-      {bug.bug_content?.description && (
+      {bugDetails.bug_content?.description && (
         <div className="card" style={{ marginBottom: '25px' }}>
           <h3>Description</h3>
-          <p>{bug.bug_content.description}</p>
+          <p>{bugDetails.bug_content.description}</p>
         </div>
       )}
 
       {/* Steps to Reproduce Section */}
-      {bug.bug_content?.steps_to_reproduce && Array.isArray(bug.bug_content.steps_to_reproduce) && bug.bug_content.steps_to_reproduce.length > 0 && (
+      {bugDetails.bug_content?.steps_to_reproduce && Array.isArray(bugDetails.bug_content.steps_to_reproduce) && bugDetails.bug_content.steps_to_reproduce.length > 0 && (
         <div className="card" style={{ marginBottom: '25px' }}>
           <h3>Steps to Reproduce</h3>
           <ol style={{ paddingLeft: '20px' }}>
-            {bug.bug_content.steps_to_reproduce.map((step, index) => (
+            {bugDetails.bug_content.steps_to_reproduce.map((step, index) => (
               <li key={index} style={{ marginBottom: '5px' }}>{step}</li>
             ))}
           </ol>
         </div>
       )}
-      {bug.bug_content?.steps_to_reproduce && !Array.isArray(bug.bug_content.steps_to_reproduce) && (
+      {bugDetails.bug_content?.steps_to_reproduce && !Array.isArray(bugDetails.bug_content.steps_to_reproduce) && (
         <div className="card" style={{ marginBottom: '25px' }}>
           <h3>Steps to Reproduce (Raw)</h3>
-          {typeof bug.bug_content.steps_to_reproduce === 'string' ? (
-            <pre style={{ whiteSpace: 'pre-wrap' }}>{bug.bug_content.steps_to_reproduce}</pre>
+          {typeof bugDetails.bug_content.steps_to_reproduce === 'string' ? (
+            <pre style={{ whiteSpace: 'pre-wrap' }}>{bugDetails.bug_content.steps_to_reproduce}</pre>
           ) : (
             <p><em>Steps to reproduce are present but not in the expected array format.</em></p>
           )}
         </div>
       )}
 
-      {bug.bug_content?.expected_outcome && (
+      {bugDetails.bug_content?.expected_outcome && (
          <div className="card" style={{ marginBottom: '25px' }}>
           <h3>Expected Behavior</h3>
-          <p>{bug.bug_content.expected_outcome}</p>
+          <p>{bugDetails.bug_content.expected_outcome}</p>
         </div>
       )}
-      {bug.bug_content?.actual_outcome && ( 
+      {bugDetails.bug_content?.actual_outcome && ( 
          <div className="card" style={{ marginBottom: '25px' }}>
           <h3>Actual Behavior</h3>
-          <p>{bug.bug_content.actual_outcome}</p>
+          <p>{bugDetails.bug_content.actual_outcome}</p>
         </div>
       )}
-      {bug.bug_metadata.security_impact && ( 
+      {bugDetails.bug_metadata.security_impact && ( 
          <div className="card" style={{ marginBottom: '25px' }}>
           <h3>Security Impact</h3>
-          <p>{bug.bug_metadata.security_impact}</p>
+          <p>{bugDetails.bug_metadata.security_impact}</p>
         </div>
       )}
 
-      {bug.attachments && bug.attachments.length > 0 && (
+      {bugDetails.attachments && bugDetails.attachments.length > 0 && (
         <div className="card" style={{ marginBottom: '25px' }}>
           <h3>Attachments / Customer Documentation</h3>
           <ul style={{ listStyle: 'none', paddingLeft: '0'}}>
-            {bug.attachments.map((att, index) => (
+            {bugDetails.attachments.map((att, index) => (
               <li key={index} style={{ marginBottom: '10px' }}>
                 {att.type === 'image' ? (
                   <img src={att.url} alt={att.name} style={{ maxWidth: '400px', maxHeight: '300px', display: 'block', margin: '10px 0' }} />
@@ -156,18 +167,25 @@ function BugDetailPage() {
         </div>
       )}
 
-      {bug.bug_metadata.categorization && (
+      {bugDetails.bug_metadata.categorization && (
         <div className="card" style={{ marginBottom: '25px' }}>
           <h3>Categorization</h3>
-          <p><strong>Type:</strong> {bug.bug_metadata.categorization.type}</p>
-          <p><strong>Area:</strong> {bug.bug_metadata.categorization.area}</p>
-          {bug.bug_metadata.categorization.CWE && <p><strong>CWE:</strong> {bug.bug_metadata.categorization.CWE}</p>}
+          <p><strong>Type:</strong> {bugDetails.bug_metadata.categorization.type}</p>
+          <p><strong>Area:</strong> {bugDetails.bug_metadata.categorization.area}</p>
+          {bugDetails.bug_metadata.categorization.CWE && <p><strong>CWE:</strong> {bugDetails.bug_metadata.categorization.CWE}</p>}
         </div>
       )}
 
-      <button onClick={handleRunTracer} style={{ marginTop: '20px', padding: '12px 25px', fontSize: '1.2em' }}>
-        Run Tracer
-      </button>
+      <div className="bug-actions">
+        <button onClick={handleRunAction} className="action-button">
+          {bugId === bugIdForSpecialDemo ? 'Run Demo Task Flow' : 'Run Tracer (Live)'}
+        </button>
+      </div>
+
+      <pre style={{ whiteSpace: 'pre-wrap', backgroundColor: '#f4f4f4', padding: '15px', borderRadius: '4px' }}>
+        {JSON.stringify(bugDetails, null, 2)}
+      </pre>
+      <Link to="/bugs" className="back-link" style={{marginTop: '20px'}}>Back to Bug List</Link>
     </div>
   );
 }
