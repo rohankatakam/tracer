@@ -1,0 +1,28 @@
+I need you to perform a specific task on a computer using your CUA (Computer Use Agent) capabilities.
+You are operating inside a virtual browser environment running Google Chrome.
+
+PREVIOUSLY COMPLETED STEPS:
+Step 1 (action): Open Google Chrome and navigate to Google.com - Completed successfully
+Step 2 (action): Click on the Google search box and type 'Larry Ell... - Completed successfully
+Step 3 (action): Press Enter to submit the search query - Completed successfully
+
+CURRENT TASK (Step 4):
+Look for the Wikipedia page for Larry Ellison in the search results. It should be among the top results. If not immediately visible, scroll down to find it.
+
+EXPECTED RESULT:
+The Wikipedia page for Larry Ellison is visible in the search results
+
+UI Elements to interact with:
+- Wikipedia search result
+- Page scroll bar
+
+
+
+
+Please perform ONLY this specific step using your CUA capabilities. Do not move ahead to subsequent steps.
+Be precise in your interactions with the UI elements specified.
+
+AVAILABLE TOOLS:
+1. bash - Run shell commands in the virtual environment
+2. screenshot - Capture a screenshot of the current browser state
+3. wiki_extract - Special tool for extracting content from Wikipedia pages

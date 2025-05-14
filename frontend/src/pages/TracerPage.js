@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import ReactFlow, {
   MiniMap,
@@ -12,6 +12,12 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 import './TracerPage.css'; // Specific styles for this page
 
+// Import Demo Data
+import { demoBugId, demoTaskGraphNodes, demoTaskGraphEdges, demoAgentLogs } from './demoData.js';
+
+// --- Constants for Demo Mode ---
+const DEMO_STEP_DELAY = 2000; // Shortened for quicker testing, adjust as needed
+
 // --- Dummy Task Graph Data ---
 // Matches the structure from TaskGraphGenerator
 // const dummyTaskGraph = { ... } // REMOVE THIS ENTIRE DUMMY DATA OBJECT
@@ -19,8 +25,7 @@ import './TracerPage.css'; // Specific styles for this page
 
 // --- Dummy Simulation Logic ---
 // const simulationSteps = dummyTaskGraph.task_graph.nodes.map(n => n.id); // REMOVE THIS
-const SIMULATION_DELAY = 2500; // ms between steps
-// --- End Dummy Simulation Logic ---
+// const SIMULATION_DELAY = 2500; // Original, can be removed if non-demo uses DEMO_STEP_DELAY or has its own
 
 // Custom Node for potential styling/interactions
 const CustomNode = ({ data }) => {
@@ -94,201 +99,246 @@ function TracerPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   
-  const [logs, setLogs] = useState([`[${new Date().toLocaleTimeString()}] Initializing Tracer for Bug ${bugId}...`]);
+  const [logs, setLogs] = useState([]);
   const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [needsGuidance, setNeedsGuidance] = useState(false);
   const [guidanceInput, setGuidanceInput] = useState('');
 
-  // Load initial graph data from API
+  const isDemoMode = bugId === demoBugId;
+  const demoTimeoutRef = useRef(null); // To store timeout ID for clearing
+
+  const addLog = useCallback((message) => {
+    setLogs(prevLogs => [...prevLogs, `[${new Date().toLocaleTimeString()}] ${message}`]);
+  }, []);
+
+  // Effect to load data (API or Demo)
   useEffect(() => {
-    const fetchTaskGraph = async () => {
-      setIsLoading(true);
-      setError(null);
-      setLogs(prevLogs => [...prevLogs, `[${new Date().toLocaleTimeString()}] Fetching task graph for Bug ${bugId}...`]);
-      try {
-        const response = await fetch(`http://localhost:5001/api/bugs/${bugId}/task_graph`, {
-          method: 'GET',
-          headers: {
-            'Cache-Control': 'no-cache',
-            'Pragma': 'no-cache',
-            'Expires': '0',
-          },
-        });
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.description || `HTTP error! status: ${response.status}`);
+    if (isDemoMode) {
+      setLogs([`[${new Date().toLocaleTimeString()}] Initializing DEMO for Bug ${bugId}...`]);
+      const initialDemoNodes = demoTaskGraphNodes.map((node, idx) => ({
+        ...node,
+        data: { ...node.data, isCurrent: idx === 0, isBlinking: false },
+      }));
+      setNodes(initialDemoNodes);
+      setEdges(demoTaskGraphEdges.map(edge => ({ ...edge, markerEnd: { type: MarkerType.ArrowClosed, width: 15, height: 15, color: '#777' }})));
+      setIsLoading(false);
+      setCurrentStepIndex(0); // Explicitly set to 0 for demo start
+    } else {
+      // Original API fetching logic
+      const fetchTaskGraph = async () => {
+        setIsLoading(true);
+        setError(null);
+        setLogs([`[${new Date().toLocaleTimeString()}] Initializing Tracer for Bug ${bugId}...`]);
+        addLog(`Fetching task graph for Bug ${bugId}...`);
+        try {
+          const response = await fetch(`http://localhost:5001/api/bugs/${bugId}/task_graph`, {
+            method: 'GET',
+            headers: {
+              'Cache-Control': 'no-cache',
+              'Pragma': 'no-cache',
+              'Expires': '0',
+            },
+          });
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.description || `HTTP error! status: ${response.status}`);
+          }
+          const data = await response.json();
+          setTaskGraphData(data);
+          addLog('Task graph loaded successfully from API.');
+        } catch (e) {
+          setError(e.message);
+          addLog(`Error fetching task graph: ${e.message}`);
+          setTaskGraphData(null);
+        } finally {
+          setIsLoading(false);
         }
-        const data = await response.json();
-        setTaskGraphData(data);
-        addLog('Task graph loaded successfully from API.');
-      } catch (e) {
-        setError(e.message);
-        addLog(`Error fetching task graph: ${e.message}`);
-        setTaskGraphData(null); // Clear any partial data
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (bugId) {
-      fetchTaskGraph();
+      };
+      if (bugId) fetchTaskGraph();
     }
-  }, [bugId]); // Removed setNodes, setEdges from dependencies, addLog is stable
+    // Cleanup timeout when component unmounts or bugId/isDemoMode changes
+    return () => clearTimeout(demoTimeoutRef.current);
+  }, [bugId, isDemoMode, setNodes, setEdges, addLog]);
 
-  // Effect to update ReactFlow nodes and edges when taskGraphData is loaded/changed
+  // Effect to update ReactFlow nodes and edges when taskGraphData is loaded (for non-demo)
   useEffect(() => {
-    if (taskGraphData && taskGraphData.task_graph && taskGraphData.task_graph.nodes) {
-      // Map API node structure to ReactFlow node structure
+    if (!isDemoMode && taskGraphData && taskGraphData.task_graph && taskGraphData.task_graph.nodes) {
       const initialNodes = taskGraphData.task_graph.nodes.map((apiNode, index) => ({
         id: apiNode.id,
-        // Fallback to a vertical layout if no position is provided by the API
-        // Adjusted y-spacing to 100px to give nodes a bit more breathing room vertically
         position: apiNode.position || { x: 100, y: index * 100 }, 
         type: 'custom',
         data: {
-          label: apiNode.data?.label || apiNode.content || `Step ${apiNode.id}`, 
+          label: apiNode.data?.label || apiNode.content || `Step ${apiNode.id}`,
           content: apiNode.content,
           metadata: apiNode.metadata || {},
           isCurrent: apiNode.id === '1' || (index === 0 && !taskGraphData.task_graph.nodes.find(n => n.id === '1')),
-          isBlinking: false, 
+          isBlinking: false,
           category: apiNode.data?.category || 'default',
           id: apiNode.id
         }
       }));
       setNodes(initialNodes);
-      
-      // Style edges to be dashed with arrowheads
       const styledEdges = (taskGraphData.task_graph.edges || []).map(edge => ({
         ...edge,
-        style: { stroke: '#777', strokeWidth: 1.5, strokeDasharray: '5 5' }, // Adjusted dash array slightly
+        style: { stroke: '#777', strokeWidth: 1.5, strokeDasharray: '5 5' },
         animated: false,
-        markerEnd: { 
-          type: MarkerType.ArrowClosed,
-          width: 15, // Size of the arrowhead
-          height: 15,
-          color: '#777', // Color of the arrowhead
-        },
+        markerEnd: { type: MarkerType.ArrowClosed, width: 15, height: 15, color: '#777' },
       }));
       setEdges(styledEdges);
-    } else {
-      // Clear nodes and edges if data is null (e.g., due to an error)
+    } else if (!isDemoMode && !taskGraphData && !isLoading) {
       setNodes([]);
       setEdges([]);
     }
-  }, [taskGraphData, setNodes, setEdges]);
-
-  const addLog = (message) => {
-    setLogs(prevLogs => [...prevLogs, `[${new Date().toLocaleTimeString()}] ${message}`]);
-  };
-
-  // Simulation Effect
+  }, [taskGraphData, setNodes, setEdges, isDemoMode, isLoading]);
+  
+  // Effect to handle demo step progression & UI updates based on currentStepIndex
   useEffect(() => {
-    let timer;
-    // Ensure taskGraphData and its properties are loaded before trying to access them
-    if (isRunning && !isPaused && taskGraphData && taskGraphData.task_graph && taskGraphData.task_graph.nodes && currentStepIndex < taskGraphData.task_graph.nodes.length) {
-      const simulationSteps = taskGraphData.task_graph.nodes.map(n => n.id); // Derive simulationSteps here
-      const stepId = simulationSteps[currentStepIndex];
-      
-      // Update node highlighting
-      setNodes((nds) =>
-        nds.map((node) => ({
-          ...node,
-          data: { 
-            ...node.data, 
-            isCurrent: node.id === stepId, 
-            isBlinking: node.id === stepId && needsGuidance
-          },
-        }))
-      );
+    if (isDemoMode && isRunning && currentStepIndex >= 0) {
+      const demoNodes = demoTaskGraphNodes;
+      const targetDemoStepCount = 3; // Steps 0, 1, 2
 
-      // Find the *ReactFlow node* from state to get the label/content for logging
-      const reactFlowNode = nodes.find(n => n.id === stepId);
-      addLog(`Executing Step ${stepId}: ${reactFlowNode?.data?.label || 'Unknown Step'}`);
-      
-      // Simulate getting stuck randomly for demo purposes
-      if (Math.random() < 0.15 && currentStepIndex > 0) { // ~15% chance after first step
-        addLog(`Agent needs guidance on step ${stepId}. Please provide input.`);
-        setNeedsGuidance(true);
-        setIsPaused(true); // Pause on needing guidance
-        // Update the current node to set isBlinking to true
-        setNodes((nds) => 
-          nds.map((n) => 
-            n.id === stepId ? { ...n, data: { ...n.data, isBlinking: true, isCurrent: true } } : n
-          )
-        );
-      } else {
-        // Proceed to next step after delay
-        timer = setTimeout(() => {
-          setCurrentStepIndex(prevIndex => prevIndex + 1);
-        }, SIMULATION_DELAY);
+      // Define separatorIndices here so it's available for both progression and completion logic
+      const separatorIndices = demoAgentLogs.reduce((acc, log, idx) => (log === "---" ? [...acc, idx] : acc), []);
+
+      if (currentStepIndex < targetDemoStepCount) {
+        const currentProcessingNode = demoNodes[currentStepIndex];
+        const currentDemoNodeId = currentProcessingNode.id;
+
+        // Highlight current node
+        setNodes((nds) => nds.map((node) => ({ ...node, data: { ...node.data, isCurrent: node.id === currentDemoNodeId }})));
+        
+        // Aggregate and set logs
+        let logsToShow = [];
+        if (currentStepIndex === 0) {
+          logsToShow = demoAgentLogs.slice(0, separatorIndices.length > 0 ? separatorIndices[0] : demoAgentLogs.length);
+        } else {
+          const endIndex = currentStepIndex < separatorIndices.length ? separatorIndices[currentStepIndex] : demoAgentLogs.length;
+          logsToShow = demoAgentLogs.slice(0, endIndex);
+        }
+        const executionMessage = `[${new Date().toLocaleTimeString()}] [DEMO] Now on: Step ${currentDemoNodeId} - ${currentProcessingNode.data.label}`;
+        setLogs([...logsToShow.map(log => log.startsWith("---") ? log : `[DEMO] ${log}`), executionMessage]);
+
+        // Schedule next step
+        demoTimeoutRef.current = setTimeout(() => {
+          setCurrentStepIndex(prev => prev + 1);
+        }, DEMO_STEP_DELAY);
+
+      } else { // Demo sequence finished
+        setIsRunning(false); // Stop the demo
+        let finalLogEndIndex = demoAgentLogs.length;
+        if (targetDemoStepCount > 0) {
+            // We want logs up to the end of the *last processed step*.
+            // If targetDemoStepCount is 3 (steps 0, 1, 2), the last processed step is index 2.
+            // We need the separator *after* step 2 logs, which is separatorIndices[2].
+            // If targetDemoStepCount-1 is a valid index for separatorIndices:
+            if (separatorIndices[targetDemoStepCount - 1] !== undefined) {
+                finalLogEndIndex = separatorIndices[targetDemoStepCount - 1];
+            } else if (targetDemoStepCount > separatorIndices.length) {
+                // If target steps exceed available separators (e.g. last step has no trailing ---)
+                finalLogEndIndex = demoAgentLogs.length; // Show all logs
+            }
+        } else {
+            finalLogEndIndex = 0; // No logs if no steps were to be shown
+        }
+        const finalLogs = demoAgentLogs.slice(0, finalLogEndIndex);
+
+        const completionMessage = `[${new Date().toLocaleTimeString()}] [DEMO] Sequence complete. Navigating...`;
+        setLogs([...finalLogs.map(log => log.startsWith("---") ? log : `[DEMO] ${log}`), completionMessage]);
+        
+        if (demoNodes.length > 0 && targetDemoStepCount > 0) {
+          const lastNodeId = demoNodes[targetDemoStepCount - 1].id;
+          setNodes((nds) => nds.map(node => ({...node, data: {...node.data, isCurrent: node.id === lastNodeId }})));
+        }
+
+        setTimeout(() => {
+          navigate(`/tracer/${bugId}/results?reproduced=true&demo=true`, { state: { demoLogs: demoAgentLogs, bugTitle: "X/Twitter Share Link Leads to NXDOMAIN (Demo)" } });
+        }, 1000); // Shorter delay before navigation
       }
-
-    } else if (taskGraphData && taskGraphData.task_graph && taskGraphData.task_graph.nodes && currentStepIndex >= taskGraphData.task_graph.nodes.length && isRunning) {
-      addLog('Simulation complete. Bug Reproduced (Simulated).');
-      setIsRunning(false);
-      // Mark last node as finished (remove blinking and current)
-       setNodes((nds) =>
-        nds.map((node) => ({ ...node, data: { ...node.data, isCurrent: false, isBlinking: false }}))
-       );
-      // Navigate to results page after a short delay
-      addLog(`Preparing to navigate to results for bug ${bugId}`);
-      setTimeout(() => {
-        navigate(`/tracer/${bugId}/results?reproduced=true`); // Pass result via query param for demo
-      }, 1500);
+    } else if (!isRunning && demoTimeoutRef.current) {
+        clearTimeout(demoTimeoutRef.current); // Clear timeout if demo is stopped manually
     }
 
-    // Cleanup timer on component unmount or when simulation stops/pauses
-    return () => clearTimeout(timer);
-  }, [isRunning, isPaused, currentStepIndex, setNodes, bugId, navigate, taskGraphData, nodes, needsGuidance]); // Added needsGuidance
+    // Non-demo simulation (simplified, needs isPaused and needsGuidance if full functionality is restored)
+    if (!isDemoMode && isRunning && !isPaused) {
+      if (taskGraphData && taskGraphData.task_graph && taskGraphData.task_graph.nodes && currentStepIndex < taskGraphData.task_graph.nodes.length) {
+        const simulationSteps = taskGraphData.task_graph.nodes.map(n => n.id);
+        const stepId = simulationSteps[currentStepIndex];
+        setNodes((nds) => nds.map((node) => ({ ...node, data: { ...node.data, isCurrent: node.id === stepId, isBlinking: node.id === stepId && needsGuidance }})));
+        const reactFlowNode = nodes.find(n => n.id === stepId);
+        const newLogEntry = `[${new Date().toLocaleTimeString()}] Executing Step ${stepId}: ${reactFlowNode?.data?.label || 'Unknown Step'}`;
+        setLogs(prev => [...prev, newLogEntry]);
+        demoTimeoutRef.current = setTimeout(() => setCurrentStepIndex(prevIndex => prevIndex + 1), DEMO_STEP_DELAY);
+      } else if (taskGraphData?.task_graph?.nodes && currentStepIndex >= taskGraphData.task_graph.nodes.length) {
+        setLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] Simulation complete.`]);
+        setIsRunning(false);
+        setNodes((nds) => nds.map((node) => ({ ...node, data: { ...node.data, isCurrent: false, isBlinking: false }})));
+        navigate(`/tracer/${bugId}/results?reproduced=true`);
+      }
+    }
+
+    return () => clearTimeout(demoTimeoutRef.current);
+  }, [isRunning, currentStepIndex, isDemoMode, bugId, navigate, setNodes, nodes, taskGraphData, isPaused, needsGuidance]); // Added nodes, taskGraphData, isPaused, needsGuidance for non-demo path
 
   const handleToggleRun = () => {
     if (isRunning) {
-      setIsPaused(!isPaused);
-      addLog(isPaused ? 'Resuming simulation...' : 'Pausing simulation...');
+      setIsRunning(false);
+      clearTimeout(demoTimeoutRef.current); // Clear any pending demo step
+      setLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] ${isDemoMode ? 'DEMO Stopped.' : 'Simulation Paused/Stopped.'}`]);
     } else {
-      setCurrentStepIndex(0); // Start from beginning
-      setLogs([`[${new Date().toLocaleTimeString()}] Starting simulation for Bug ${bugId}...`]);
-      setIsRunning(true);
-      setIsPaused(false);
-      setNeedsGuidance(false);
-      addLog('Simulation started.');
+      setCurrentStepIndex(0); // Reset to first step
+      setLogs([`[${new Date().toLocaleTimeString()}] ${isDemoMode ? 'Starting DEMO...' : 'Starting CUA Simulation...'}`]);
+      setIsRunning(true); 
+      // For demo, the useEffect on isRunning & currentStepIndex will now pick up and start the sequence.
+      // For non-demo, it also relies on this combination.
     }
   };
 
   const handleProvideGuidance = () => {
-    if (!guidanceInput) return;
-    if (!taskGraphData || !taskGraphData.task_graph || !taskGraphData.task_graph.nodes) return; // Guard
-    const simulationSteps = taskGraphData.task_graph.nodes.map(n => n.id); // Derive simulationSteps here
+    if (!guidanceInput || isDemoMode) return;
+    if (!taskGraphData || !taskGraphData.task_graph || !taskGraphData.task_graph.nodes) return; 
+    const simulationSteps = taskGraphData.task_graph.nodes.map(n => n.id); 
     const stepId = simulationSteps[currentStepIndex];
     addLog(`User provided guidance for step ${stepId}: ${guidanceInput}`);
     setGuidanceInput('');
     setNeedsGuidance(false);
-    setIsPaused(false); // Resume simulation after guidance
-     // Immediately move to next step after guidance
-     setCurrentStepIndex(prevIndex => prevIndex + 1);
+    setIsPaused(false); 
+    setCurrentStepIndex(prevIndex => prevIndex + 1);
   };
 
+  // getCurrentStepInfo needs to be aware of demo mode
   const getCurrentStepInfo = () => {
-    if (isLoading) return 'Loading task graph...';
-    if (error) return `Error: ${error}`;
-    // Use the 'nodes' state variable which holds the ReactFlow nodes
-    if (!nodes || nodes.length === 0) return 'No task graph data available.'; 
-
-    // Derive simulationSteps from the ReactFlow 'nodes' state if needed, or keep using taskGraphData if preferred
-    // Let's derive from taskGraphData as it's the source of truth for steps
-    if (!taskGraphData || !taskGraphData.task_graph || !taskGraphData.task_graph.nodes) return 'Task graph structure missing.';
-    const simulationSteps = taskGraphData.task_graph.nodes.map(n => n.id); 
+    if (isLoading && !isDemoMode) return 'Loading task graph...'; // isLoading is primarily for API calls
+    if (!isDemoMode && error) return `Error: ${error}`;
     
-    if (currentStepIndex < simulationSteps.length) {
-      const currentId = simulationSteps[currentStepIndex];
-      // Find the corresponding ReactFlow node from the 'nodes' state
-      const reactFlowNode = nodes.find(n => n.id === currentId);
-      // Access the content from the node's data property
-      return reactFlowNode ? `Current Step (${currentId}): ${reactFlowNode.data.content}` : 'Starting...';
+    if (isDemoMode) {
+      if (currentStepIndex >= 0 && currentStepIndex < demoTaskGraphNodes.length) {
+        const demoNode = demoTaskGraphNodes[currentStepIndex];
+        if (demoNode && demoNode.data) {
+          const stepId = demoNode.data.id;
+          const content = demoNode.data.content || demoNode.data.label || 'No content for this demo step.';
+          return `Current Step (${stepId}): ${content}`;
+        }
+      }
+      if (isRunning) return 'Finishing demo...';
+      return 'Demo stopped or not started.';
+    }
+
+    // Non-demo mode logic
+    const currentNodesSource = taskGraphData?.task_graph?.nodes || [];
+    if (!currentNodesSource || currentNodesSource.length === 0) return 'No task graph data.';
+
+    if (currentStepIndex >= 0 && currentStepIndex < currentNodesSource.length) {
+      const currentNode = currentNodesSource[currentStepIndex];
+      if (currentNode && currentNode.data) {
+        const stepId = currentNode.id;
+        const content = currentNode.data.content || currentNode.data.label || 'No content for this step.';
+        return `Current Step (${stepId}): ${content}`;
+      }
     } 
-    return isRunning ? 'Finishing simulation...' : 'Simulation stopped.';
+    if (isRunning) return 'Finishing simulation...';
+    return 'Simulation stopped.';
   };
 
   if (isLoading) {
@@ -309,7 +359,8 @@ function TracerPage() {
     );
   }
   
-  if (!taskGraphData || !taskGraphData.task_graph || !taskGraphData.task_graph.nodes || taskGraphData.task_graph.nodes.length === 0) {
+  if (!isDemoMode && (!taskGraphData || !taskGraphData.task_graph || !taskGraphData.task_graph.nodes || taskGraphData.task_graph.nodes.length === 0)) {
+    // Adjusted this condition to not block demo mode if taskGraphData isn't fully set up in the same way
     return (
       <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
         <h2>No Task Graph Data Available for Bug ID: {bugId}</h2>
@@ -331,29 +382,29 @@ function TracerPage() {
             nodeTypes={nodeTypes}
             fitView
             fitViewOptions={{ padding: 0.1 }}
-            style={{ width: '100%', height: '100%' }} // Make ReactFlow fill this container
+            style={{ width: '100%', height: '100%' }}
           >
             <Controls />
             <MiniMap />
             <Background variant="dots" gap={12} size={1} />
           </ReactFlow>
         </div>
-         <div className={`current-step-info ${needsGuidance ? 'needs-guidance' : ''}`}>
+         <div className={`current-step-info ${isDemoMode ? '' : (needsGuidance ? 'needs-guidance' : '')}`}>
            {getCurrentStepInfo()}
         </div>
       </div>
       <div className="simulation-panel">
-        <h3>CUA Simulation & Logs</h3>
+        <h3>{isDemoMode ? 'DEMO Simulation & Logs' : 'CUA Simulation & Logs'}</h3>
         <div style={{ marginBottom: '15px' }}>
-          <button onClick={handleToggleRun} disabled={needsGuidance && !isPaused}>
-            {isRunning ? (isPaused ? 'Resume' : 'Pause') : 'Start CUA'}
+          <button onClick={handleToggleRun} disabled={!isDemoMode && isRunning && needsGuidance && !isPaused } >
+            {isRunning ? (isDemoMode ? 'Stop Demo' : (isPaused ? 'Resume' : 'Pause')) : (isDemoMode ? 'Start Demo' : 'Start CUA')}
           </button>
           <span className="status-text">
-            Status: {isRunning ? (isPaused ? 'Paused' : 'Running') : 'Stopped'}
+            Status: {isRunning ? 'Running' : 'Stopped'} {isDemoMode && isRunning && currentStepIndex < (isDemoMode ? demoTaskGraphNodes.length : (taskGraphData?.task_graph?.nodes?.length || 0)) ? `(Step ${currentStepIndex +1})` : ''}
           </span>
         </div>
         
-        {needsGuidance && (
+        {!isDemoMode && needsGuidance && (
           <div className="guidance-box">
             <h4>Agent Needs Guidance</h4>
             <p>The agent is stuck on the current step. Please provide instructions:</p>
@@ -375,16 +426,13 @@ function TracerPage() {
           ))}
         </div>
         
-        {/* Add a manual button to go to results, visible if graph is loaded */}
-        {taskGraphData && taskGraphData.task_graph && (
-            <button 
-                onClick={() => navigate(`/tracer/${bugId}/results?reproduced=false&manual_nav=true`)} 
-                style={{ marginTop: '15px'}} 
-                disabled={isRunning && !isPaused} // Disable if simulation is actively running and not paused
-            >
-                Go to Results Page
-            </button>
-        )}
+        <button 
+            onClick={() => navigate(`/tracer/${bugId}/results?reproduced=${isRunning && !isDemoMode ? 'false' : 'true'}${isDemoMode ? '&demo=true' : ''}`, isDemoMode ? { state: { demoLogs: demoAgentLogs, bugTitle: "X/Twitter Share Link Leads to NXDOMAIN (Demo)" } } : {} )} 
+            style={{ marginTop: '15px'}} 
+            disabled={isRunning && !isPaused && !isDemoMode}
+        >
+            Go to Results Page
+        </button>
       </div>
     </div>
   );
