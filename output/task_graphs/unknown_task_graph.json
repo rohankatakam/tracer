@@ -1,0 +1,7 @@
+{
+  "id": "access_bug_report",
+  "description": "Access and review the provided bug report JSON.",
+  "dependencies": [],
+  "status": "completed",
+  "name": "bug_unknown"
+}

@@ -96,7 +96,6 @@ venv.bak/
 # Project specific
 data/outputs/
 debug_output/
-*.md
 anthropic-quickstarts/
 *.log
 screenshots/
@@ -137,3 +136,7 @@ dmypy.json
 # Temporarily commenting out data exclusion to allow viewing in Windsurf
 # data/*
 # !data/.gitkeep
+
+# Added by Cascade: Ignore large frontend dependencies and specific backup outputs
+frontend/node_modules/
+backup/data/outputs/

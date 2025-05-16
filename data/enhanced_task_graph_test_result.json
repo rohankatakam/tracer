@@ -1,0 +1,199 @@
+{
+  "name": "bug_37807513",
+  "description": "Security vulnerability allowing unauthorized data modification in Business Processes by intercepting and altering JSON requests, enabling users to assign themselves privileges or modify data in projects they are not authorized for.",
+  "environment": {
+    "application": "ExampleApp 23.12.15",
+    "browser": "Not specified, assumed to be any modern web browser compatible with ExampleApp.",
+    "operating_system": "Not specified, assumed to be any OS capable of running a browser and a proxy tool like Burp Suite."
+  },
+  "task_graph": {
+    "nodes": [
+      {
+        "id": "1",
+        "type": "action",
+        "content": "Log in to ExampleApp and navigate to the 'Create New Actual Cost EDF' page. This page is part of a Business Process.",
+        "metadata": {
+          "image_refs": [
+            "page_1_img_1.png"
+          ],
+          "ui_elements": [
+            "Navigation menus",
+            "Create New Actual Cost EDF form"
+          ],
+          "inputs": [],
+          "expected_result": "The 'Create New Actual Cost EDF' form is displayed, showing fields like 'Year', 'Month', 'Status' as modifiable. See page_1_img_1.png."
+        }
+      },
+      {
+        "id": "2",
+        "type": "action",
+        "content": "Fill in the standard, user-modifiable fields on the 'Create New Actual Cost EDF' form. For example, select a year, a month, and a status.",
+        "metadata": {
+          "image_refs": [
+            "page_1_img_1.png"
+          ],
+          "ui_elements": [
+            "Year dropdown/input",
+            "Month dropdown/input",
+            "Status dropdown/input"
+          ],
+          "inputs": [
+            "year=YYYY",
+            "month=MM",
+            "status=Draft"
+          ],
+          "expected_result": "The form fields for Year, Month, and Status are populated with the entered values."
+        }
+      },
+      {
+        "id": "3",
+        "type": "action",
+        "content": "Configure an interception proxy (e.g., Burp Suite) to capture outgoing requests. Initiate the creation of the 'Actual Cost EDF' record by clicking the 'Send' or equivalent submit button on the form.",
+        "metadata": {
+          "image_refs": [
+            "page_1_img_1.png"
+          ],
+          "ui_elements": [
+            "Send/Submit button for the form"
+          ],
+          "inputs": [],
+          "expected_result": "The HTTP request to create the 'Actual Cost EDF' record is intercepted by the proxy tool before being sent to the server."
+        }
+      },
+      {
+        "id": "4",
+        "type": "action",
+        "content": "In the intercepted HTTP request, locate the JSON payload. Modify this JSON to include data for fields that are not normally editable through the UI, or to change values for restricted fields. Refer to page_2_img_1.jpeg for an example of a modified JSON. This includes adding/altering fields such as 'uutxt_year', 'uutxt_month', 'uucur_price_current', 'uuu_record_last_update_date', 'ucur_rawcostReference', 'udec_RawCostInitialCur', 'ugenProjectNumber', 'udec_RaCostInitCurEuro', 'ucur_price_reference', 'ucur_RawCost_Current'. Optionally, change 'ugenProjectNumber' or a similar project identifier to a project ID for which the current user does not have modification rights.",
+        "metadata": {
+          "image_refs": [
+            "page_2_img_1.jpeg"
+          ],
+          "ui_elements": [
+            "Proxy tool's request editor (e.g., Burp Repeater or Intercept tab)"
+          ],
+          "inputs": [
+            "JSON payload modification. Example changes (see page_2_img_1.jpeg):",
+            "\"uutxt_year\": \"Not a year\"",
+            "\"uutxt_month\": \"Not a month\"",
+            "\"status\": \"Actuals Approved\"",
+            "\"uucur_price_current\": 10000.0",
+            "\"uuu_record_last_update_date\": \"1910/01/01 12:30\"",
+            "\"ucur_rawcostReference\": 555550.0",
+            "\"udec_RawCostInitialCur\": 555550.0",
+            "\"ugenProjectNumber\": \"P-0001\" (or an unauthorized project ID)",
+            "\"udec_RaCostInitCurEuro\": 99999999999950.0",
+            "\"ucur_price_reference\": 9999999999950.0",
+            "\"ucur_RawCost_Current\": 999999999999999990.0"
+          ],
+          "expected_result": "The JSON payload in the intercepted request is modified to include the unauthorized data changes."
+        }
+      },
+      {
+        "id": "5",
+        "type": "action",
+        "content": "Forward the modified HTTP request from the proxy tool to the server.",
+        "metadata": {
+          "image_refs": [],
+          "ui_elements": [
+            "Proxy tool's 'Forward' or 'Send' button"
+          ],
+          "inputs": [],
+          "expected_result": "The modified request is sent to the ExampleApp server. The server processes the request."
+        }
+      },
+      {
+        "id": "6",
+        "type": "action",
+        "content": "Observe the server's HTTP response in the proxy tool. Check for a success status and examine the response body.",
+        "metadata": {
+          "image_refs": [
+            "page_2_img_2.jpeg"
+          ],
+          "ui_elements": [
+            "Proxy tool's response viewer"
+          ],
+          "inputs": [],
+          "expected_result": "The server returns an HTTP success response (e.g., 200 OK). The response body (see page_2_img_2.jpeg for an example) should indicate that the record was created/updated and may reflect the modified data (e.g., 'record_no': 'ACEDF-0000055', 'status': 'Actuals Approved', and other modified values like 'uutxt_month': 'Not a month')."
+        }
+      },
+      {
+        "id": "7",
+        "type": "action",
+        "content": "Navigate to the view in ExampleApp where 'Actual Cost EDF' records are listed or displayed (e.g., a project's Business Process log or a specific record view).",
+        "metadata": {
+          "image_refs": [
+            "page_2_img_3.png"
+          ],
+          "ui_elements": [
+            "Application's data views/logs for 'Actual Cost EDF'"
+          ],
+          "inputs": [],
+          "expected_result": "The newly created or updated 'Actual Cost EDF' record is visible in the application."
+        }
+      },
+      {
+        "id": "8",
+        "type": "verification",
+        "content": "Verify that the data for the record in the application UI reflects the unauthorized modifications made to the JSON request. For example, fields like 'Year', 'Month', 'Raw Cost - Current \u20ac', 'Price - Current \u20ac', 'Price - Reference' should show the altered values. See page_2_img_3.png for an example of how the UI displays these changes.",
+        "metadata": {
+          "image_refs": [
+            "page_2_img_3.png"
+          ],
+          "ui_elements": [
+            "Actual Cost EDF record details view"
+          ],
+          "inputs": [],
+          "expected_result": "The application UI displays the unauthorized data, confirming the vulnerability. For instance, 'Month' might display 'Not a month', and financial figures reflect the large, arbitrary numbers submitted."
+        }
+      }
+    ],
+    "edges": [
+      {
+        "source": "1",
+        "target": "2"
+      },
+      {
+        "source": "2",
+        "target": "3"
+      },
+      {
+        "source": "3",
+        "target": "4"
+      },
+      {
+        "source": "4",
+        "target": "5"
+      },
+      {
+        "source": "5",
+        "target": "6"
+      },
+      {
+        "source": "6",
+        "target": "7"
+      },
+      {
+        "source": "7",
+        "target": "8"
+      }
+    ]
+  },
+  "verification_steps": [
+    "Step 1: After forwarding the modified request (Step 5), observe the server's response (Step 6). The response should indicate success and may contain the modified data as shown in page_2_img_2.jpeg.",
+    "Step 2: Navigate within the ExampleApp application to view the newly created/modified 'Actual Cost EDF' record (Step 7).",
+    "Step 3: Confirm that the record's details displayed in the UI (e.g., year, month, cost fields) match the unauthorized values that were injected into the JSON request (Step 8). Refer to page_2_img_3.png for visual confirmation of such changes.",
+    "Step 4: If the 'project_id' or equivalent was changed to an unauthorized project, verify that the record was indeed created/modified in that target project, despite the user lacking direct permissions."
+  ],
+  "confidence_score": 0.9,
+  "missing_information": [
+    "Specific user roles and permissions required for the 'authorized' part of the test (to establish a baseline).",
+    "Detailed navigation steps to reach the 'Create New Actual Cost EDF' form within ExampleApp.",
+    "Exact name of the 'Send' or 'Submit' button on the form.",
+    "Specific details on setting up and configuring the interception proxy (e.g., Burp Suite) with ExampleApp, including any SSL/TLS certificate handling if HTTPS is used.",
+    "A list of all fields that are supposed to be non-editable via UI for the 'Actual Cost EDF' Business Process for comprehensive testing."
+  ],
+  "source": {
+    "model": "gemini-2.5-pro-exp-03-25",
+    "raw_data_package": "unknown"
+  }
+}

@@ -1,17 +1,21 @@
-# AI-Powered Bug Reproduction MVP
+# Bug Reporting and Analysis System
 
-AI-Powered Bug Reproduction MVP using Anthropic's Computer Use Agent (CUA) API. This project aims to reproduce software bugs by parsing reports and driving browser actions with AI.
+A system for parsing and analyzing bug reports using Anthropic's Computer Use Agent (CUA) API. This project focuses on structured bug data processing and sets the foundation for future integration with Anthropic's Computer Use Agent.
 
 ## Project Overview
 
-This system parses bug reports in a structured format and uses Anthropic's Claude (via the Computer Use Agent API) to reproduce the reported bug steps in a browser environment. The system captures evidence of the bug reproduction process through screenshots and structured logs.
+This system provides robust data structures and processing capabilities for bug reports. It includes:
+
+1. **Structured Bug Schemas**: Well-defined schemas for different bug tracking systems
+2. **PDF Processing**: Extract text and images from PDF bug reports
+3. **Attachment Handling**: Process various attachment types including images and text
 
 ## Getting Started
 
 ### Prerequisites
 
 - Python 3.8+
-- Anthropic API key
+- Anthropic API key (for future Computer Use Agent integration)
 
 ### Installation
 
@@ -27,31 +31,30 @@ This system parses bug reports in a structured format and uses Anthropic's Claud
 ```
 /
 ├── data/                     # Data storage directory
-│   ├── chrome_search_test/   # Test results for Chrome search tasks
 │   ├── outputs/              # Extracted data outputs
-│   ├── task_graphs/          # Task graph definition files
-│   └── test_output/          # General test output data
+│   └── task_graphs/          # Task graph definition files
 ├── docs/                     # Documentation
-├── src/                      # Source code
-│   ├── extraction/           # Content extraction modules
+├── core/                     # Core components
+│   ├── agent/                # Anthropic agent interface
 │   ├── ingestion/            # Data ingestion modules
-│   ├── reporting/            # Reporting utilities
-│   ├── test_cases/           # Test case definitions
-│   ├── test_framework/       # Test framework components
+│   ├── models/               # Data models and schemas
+│   ├── taskgraph/            # Task graph definitions
 │   └── utils/                # Utility functions
+├── scripts/                  # Utility scripts
 ├── tests/                    # Test suites
 └── requirements.txt          # Dependencies
 ```
 
 ## Features
 
-- Task graph-based automation using Claude API
-- Browser automation for web interactions
-- Content extraction from web pages
-- Comprehensive logging and reporting
-- Enhanced bug data schema support
+- Structured bug schemas for multiple bug tracking systems
+- PDF processing for bug report extraction
+- Attachment handling (images, text, PDFs)
+- Clean modular architecture with core components
 
-## Getting Started
+## Using Anthropic's Computer Use Agent
+
+This project is designed to serve as a foundation for integrating with Anthropic's Computer Use Agent (CUA). The current version focuses on robust data processing, while the actual browser automation is handled directly by Anthropic's CUA.
 
 1. Install dependencies:
    ```
@@ -63,25 +66,38 @@ This system parses bug reports in a structured format and uses Anthropic's Claud
    ANTHROPIC_API_KEY=your_api_key_here
    ```
 
-3. Run a sample test:
+3. To use Anthropic's Computer Use Agent directly:
+
+   ```python
+   import os
+   import anthropic
+   
+   # Set up the client
+   client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
+   
+   # Create a message with system prompt
+   response = client.messages.create(
+       model="claude-3-7-sonnet-20250219",
+       max_tokens=4096,
+       system="You are a helpful Computer Use Agent that can use Chrome.",
+       messages=[{"role": "user", "content": "Please open Chrome and search for 'Anthropic Claude API documentation'"}],
+       tools=[{
+           "name": "computer",
+           "type": "computer_20250124",
+           "display_width_px": 1280,
+           "display_height_px": 800
+       }]
+   )
    ```
-   python test_chrome_search.py
-   ```
 
-## Task Graphs
+## Data Models
 
-Task graphs define a sequence of steps to be executed by the automation framework. Each step includes:
+The system includes robust data models for bug reports from different tracking systems:
 
-- Action to be performed
-- Verification of the action
-- Success and failure paths
-
-See `data/task_graphs/chrome_search_task_graph.json` for an example.
-- `data/`: Storage for bug reports, execution logs, and outputs
-  - `test_inputs/`: Input files for testing (PDFs, etc.)
-  - `test_outputs/`: Output files generated during testing
-- `logs/`: Application and test logs
-- `run_cua.sh`: Main script for running the application and tests
+- BaseBugReport: Core schema with essential bug fields
+- MozillaBugReport: Mozilla Bugzilla specific schema
+- ChromiumBugReport: Chromium issue tracker schema
+- OracleBugReport: Oracle bug tracking system schema
 
 ## License
 

@@ -1,0 +1,151 @@
+{
+    "name": "bug_academybugs_twitter_share_nxdomain_01",
+    "description": "X/Twitter social share link on AcademyBugs.com product pages leads to a DNS_PROBE_FINISHED_NXDOMAIN error.",
+    "environment": {
+        "application": "AcademyBugs.com",
+        "browser": "Firefox (any recent version)",
+        "operating_system": "Any (Web environment)"
+    },
+    "task_graph": {
+        "nodes": [
+            {
+                "id": "1",
+                "type": "action",
+                "content": "Open a new Firefox browser window.",
+                "metadata": {
+                    "image_refs": [],
+                    "ui_elements": [
+                        "Firefox browser application"
+                    ],
+                    "inputs": [],
+                    "expected_result": "A new, empty Firefox browser window is open and active."
+                }
+            },
+            {
+                "id": "2",
+                "type": "action",
+                "content": "Navigate to the 'Find Bugs' page by entering 'https://academybugs.com/find-bugs/' into the address bar and pressing Enter.",
+                "metadata": {
+                    "image_refs": [],
+                    "ui_elements": [
+                        "Browser address bar"
+                    ],
+                    "inputs": [
+                        "url=https://academybugs.com/find-bugs/"
+                    ],
+                    "expected_result": "The AcademyBugs 'Find Bugs' page (https://academybugs.com/find-bugs/) is successfully loaded and displayed."
+                }
+            },
+            {
+                "id": "3",
+                "type": "action",
+                "content": "On the 'Find Bugs' page, identify and click on the first available product link. For example, this might be 'DNK Yellow Shoes'.",
+                "metadata": {
+                    "image_refs": [],
+                    "ui_elements": [
+                        "First product link on the page",
+                        "Example: 'DNK Yellow Shoes' link"
+                    ],
+                    "inputs": [],
+                    "expected_result": "The browser navigates to the product detail page for the clicked product."
+                }
+            },
+            {
+                "id": "4",
+                "type": "action",
+                "content": "On the product detail page, locate the social media share icon for 'X' (formerly Twitter). This is typically represented by an 'X' logo or a bird logo.",
+                "metadata": {
+                    "image_refs": [],
+                    "ui_elements": [
+                        "X (Twitter) social share icon/button"
+                    ],
+                    "inputs": [],
+                    "expected_result": "The 'X' (Twitter) social share icon is visually identified on the page."
+                }
+            },
+            {
+                "id": "5",
+                "type": "action",
+                "content": "Click the 'X' (Twitter) social share icon.",
+                "metadata": {
+                    "image_refs": [],
+                    "ui_elements": [
+                        "X (Twitter) social share icon/button"
+                    ],
+                    "inputs": [],
+                    "expected_result": "A new browser tab attempts to open or the current tab attempts to navigate to a Twitter sharing URL."
+                }
+            },
+            {
+                "id": "6",
+                "type": "action",
+                "content": "Observe the browser. Note any new tabs opened and error messages displayed. Specifically, look for a DNS error page.",
+                "metadata": {
+                    "image_refs": [],
+                    "ui_elements": [
+                        "Browser tab",
+                        "Error message display area"
+                    ],
+                    "inputs": [],
+                    "expected_result": "A browser error page is displayed, typically in a new tab, showing a message like 'This site can't be reached' and 'DNS_PROBE_FINISHED_NXDOMAIN'."
+                }
+            },
+            {
+                "id": "7",
+                "type": "action",
+                "content": "(Optional) Open browser developer tools (e.g., by pressing F12), navigate to the 'Console' and 'Network' tabs, and look for specific error details related to DNS resolution for the Twitter domain.",
+                "metadata": {
+                    "image_refs": [],
+                    "ui_elements": [
+                        "Browser developer tools",
+                        "Console tab",
+                        "Network tab"
+                    ],
+                    "inputs": [],
+                    "expected_result": "Developer tools show errors indicating a failure to resolve the domain name associated with the Twitter share link."
+                }
+            }
+        ],
+        "edges": [
+            {
+                "source": "1",
+                "target": "2"
+            },
+            {
+                "source": "2",
+                "target": "3"
+            },
+            {
+                "source": "3",
+                "target": "4"
+            },
+            {
+                "source": "4",
+                "target": "5"
+            },
+            {
+                "source": "5",
+                "target": "6"
+            },
+            {
+                "source": "6",
+                "target": "7"
+            }
+        ]
+    },
+    "verification_steps": [
+        "Step 1: After clicking the 'X' (Twitter) social share icon on a product page, verify that the browser displays an error page.",
+        "Step 2: Confirm the error page indicates a DNS issue, specifically showing a 'DNS_PROBE_FINISHED_NXDOMAIN' message (or similar, e.g., 'This site can't be reached', 'Server not found').",
+        "Step 3: Verify that the browser does not successfully navigate to a Twitter sharing interface or page."
+    ],
+    "confidence_score": 0.95,
+    "missing_information": [
+        "Specific version of Firefox browser (though the bug is likely not version-specific).",
+        "Specific Operating System version (though 'Web' implies OS independence for this type of bug).",
+        "Screenshots of the 'Find Bugs' page, product detail page, 'X' icon, and the error page, which would aid visual identification for an agent."
+    ],
+    "source": {
+        "model": "gemini-2.5-pro-exp-03-25",
+        "raw_data_package": "unknown"
+    }
+}
