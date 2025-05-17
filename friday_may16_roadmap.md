@@ -126,28 +126,7 @@ Given your time constraints and the desire to make meaningful progress, I've str
   - Implement responsive design improvements
   - Add keyboard shortcuts for power users
 
-## 6. External Bug Data Ingestion (2.5-3.5 hours)
-
-- **6.1. Bugzilla API Client (1-1.5 hours)**
-  - Identify target Bugzilla instance (e.g., public Mozilla instance for testing).
-  - Use Python `requests` library to interact with the Bugzilla REST API (e.g., `GET /rest/bug`).
-  - Fetch bug data (ID, summary, description, status, product, component, attachments).
-  - Implement a script/module `core/ingestion/bugzilla_client.py`.
-- **6.2. Chromium Issues Web Crawler (1.5-2 hours)**
-  - **Disclaimer**: Web scraping can be fragile and might violate terms of service. Proceed with caution and respect `robots.txt`.
-  - Target: Chromium issue tracker (e.g., issues.chromium.org).
-  - Libraries: `requests` for fetching HTML, `BeautifulSoup4` for parsing.
-  - Identify key HTML elements containing bug information (title, description, comments, metadata).
-  - Implement a script/module `core/ingestion/chromium_crawler.py`.
-  - Focus on extracting a few key fields initially.
-- **6.3. Data Transformation & Loading (0.5-1 hour)**
-  - Create mapping functions to transform Bugzilla and Chromium data structures into your application's Bug and Attachment schema.
-  - Develop scripts to:
-    - Read data fetched by the client/crawler.
-    - Transform it.
-    - Use the API layer (`POST /bugs` and `POST /bugs/{bug_id}/attachments`) to load the data into PostgreSQL. This ensures data validation and consistent processing.
-
-## 7. Attachment Processor Refinement (2-2.5 hours) (Previously Step 4)
+## 6. Attachment Processor Refinement (2-2.5 hours) (Previously Step 4)
 
 - **Enhance Text Processor**
   - Complete `text_processor.py` implementation
@@ -169,7 +148,7 @@ Given your time constraints and the desire to make meaningful progress, I've str
   - Improve handling of processing results
   - Ensure proper database integration
 
-## 8. LLM Multimodal Reasoning Chain (2-3 hours) (Previously Step 5)
+## 7. LLM Multimodal Reasoning Chain (2-3 hours) (Previously Step 5)
 
 - **Enhance Task Graph Generator**
   - Modify `working_task_graph_generator.py` to pull all necessary bug data (title, description, processed attachment content) from PostgreSQL via the bug_id.
@@ -182,6 +161,27 @@ Given your time constraints and the desire to make meaningful progress, I've str
 - **Improve Response Handling**
   - Enhance JSON extraction and validation from LLM output.
   - Add basic error recovery mechanisms or retry logic for LLM calls.
+
+## 8. External Bug Data Ingestion (2.5-3.5 hours)
+
+- **8.1. Bugzilla API Client (1-1.5 hours)**
+  - Identify target Bugzilla instance (e.g., public Mozilla instance for testing).
+  - Use Python `requests` library to interact with the Bugzilla REST API (e.g., `GET /rest/bug`).
+  - Fetch bug data (ID, summary, description, status, product, component, attachments).
+  - Implement a script/module `core/ingestion/bugzilla_client.py`.
+- **8.2. Chromium Issues Web Crawler (1.5-2 hours)**
+  - **Disclaimer**: Web scraping can be fragile and might violate terms of service. Proceed with caution and respect `robots.txt`.
+  - Target: Chromium issue tracker (e.g., issues.chromium.org).
+  - Libraries: `requests` for fetching HTML, `BeautifulSoup4` for parsing.
+  - Identify key HTML elements containing bug information (title, description, comments, metadata).
+  - Implement a script/module `core/ingestion/chromium_crawler.py`.
+  - Focus on extracting a few key fields initially.
+- **8.3. Data Transformation & Loading (0.5-1 hour)**
+  - Create mapping functions to transform Bugzilla and Chromium data structures into your application's Bug and Attachment schema.
+  - Develop scripts to:
+    - Read data fetched by the client/crawler.
+    - Transform it.
+    - Use the API layer (`POST /bugs` and `POST /bugs/{bug_id}/attachments`) to load the data into PostgreSQL. This ensures data validation and consistent processing.
 
 ## 9. Integration Testing & Task Graph API (2-3 hours) (Previously Step 6, expanded)
 
@@ -258,15 +258,14 @@ Given your time constraints and the desire to make meaningful progress, I've str
 |                   | Break                                              | 0.5             | 5.25             |
 |                   | 4. API Layer for Database Interaction              | 2               | 7.25             |
 | Day 2 Morning     | 5. Frontend for Bug Creation (Next.js/React)      | 3.5             | 10.75            |
-|                   | 6.1. Bugzilla API Client                           | 1.5             | 12.25            |
-| Day 2 Afternoon   | 6.2. Chromium Issues Web Crawler                 | 2               | 14.25            |
-|                   | 6.3. Data Transformation & Loading                 | 1               | 15.25            |
+|                   | 5.1 Frontend Enhancements                         | 2.0             | 12.75            |
+| Day 2 Afternoon   | 6. Attachment Processor Refinement                | 2.5             | 15.25            |
 |                   | Break                                              | 0.5             | 15.75            |
-| Day 2 Evening     | 7. Attachment Processor Refinement                 | 2.5             | 18.25            |
-| Day 3 Morning     | 8. LLM Multimodal Reasoning Chain                  | 3               | 21.25            |
-| Day 3 Afternoon   | 9. Integration Testing & Task Graph API            | 3               | 24.25            |
-| Day 3 Evening     | 10. Computer Use Agent (CUA) Integration & Execution | 3.5             | 27.75            |
-| Day 4 Morning     | 11. Documentation Updates                          | 1.5             | 29.25            |
+| Day 2 Evening     | 7. LLM Multimodal Reasoning Chain                 | 3.0             | 18.75            |
+| Day 3 Morning     | 8. External Bug Data Ingestion                    | 3.5             | 22.25            |
+| Day 3 Afternoon   | 9. Integration Testing & Task Graph API           | 3.0             | 25.25            |
+| Day 3 Evening     | 10. Computer Use Agent (CUA) Integration & Execution | 3.5             | 28.75            |
+| Day 4 Morning     | 11. Documentation Updates                          | 1.5             | 30.25            |
 
 **Total Estimated Hours: ~29.5 hours**
 
@@ -277,18 +276,19 @@ Given your time constraints and the desire to make meaningful progress, I've str
 2.  PostgreSQL Setup (Essential)
 3.  Database Layer Implementation (SQLAlchemy) (Essential)
 4.  API Layer for Database Interaction (Essential for decoupling)
-5.  Attachment Processor Refinement (Text, Image, PDF - core to multimodal)
-6.  LLM Multimodal Reasoning Chain (Core to generating task graphs)
-7.  Integration Testing & Task Graph API (Essential for verifying task graph generation)
-8.  Computer Use Agent (CUA) Integration & Execution (Essential for executing tasks)
+5.  Frontend for Bug Creation (COMPLETED ✅) 
+6.  Attachment Processor Refinement (Text, Image, PDF - core to multimodal)
+7.  LLM Multimodal Reasoning Chain (Core to generating task graphs)
+8.  Integration Testing & Task Graph API (Essential for verifying task graph generation)
+9.  Computer Use Agent (CUA) Integration & Execution (Essential for executing tasks)
 
-**Stage 2: User Input & Basic External Ingestion**
-9.  Frontend for Bug Creation (Allows user input)
-10. External Bug Data Ingestion (Bugzilla Client - choose one to start)
-11. Documentation Updates (For completed stages)
+**Stage 2: User Input & External Ingestion**
+10. Frontend Enhancements (Editable fields, comments, attachment references)
+11. External Bug Data Ingestion (Bugzilla Client and Chromium Crawler)
+12. Documentation Updates (For completed stages)
 
-**Stage 3: Advanced Ingestion & Polish**
-12. External Bug Data Ingestion (Chromium Crawler - more complex)
-13. Further Documentation & Refinements
+**Stage 3: Polish & Refinements**
+13. UI/UX Improvements (Dark mode, responsive design, keyboard shortcuts)
+14. Further Documentation & Refinements
 
 This expanded roadmap provides a more detailed and realistic plan for the comprehensive Bug-to-Task-Graph pipeline you envision.
