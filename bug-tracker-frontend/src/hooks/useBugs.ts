@@ -11,7 +11,7 @@ export function useAllBugs() {
     const fetchBugs = async () => {
       try {
         setIsLoading(true);
-        const data = await bugAPI.getAllBugs();
+        const data = await bugAPI.getAll();
         setBugs(data);
         setError(null);
       } catch (err) {
@@ -39,7 +39,7 @@ export function useBugById(bugId: string | null) {
     const fetchBug = async () => {
       try {
         setIsLoading(true);
-        const data = await bugAPI.getBugById(bugId);
+        const data = await bugAPI.getById(bugId);
         
         // Fetch attachments if there are any
         if (data.attachment_count && data.attachment_count > 0) {

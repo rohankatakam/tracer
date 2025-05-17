@@ -48,7 +48,7 @@ export default function CreateBugPage() {
       setSubmitError(null);
       
       // Step 1: Create the bug
-      const newBug = await bugAPI.createBug(data);
+      const newBug = await bugAPI.create(data);
       
       // Step 2: Upload attachments (if any)
       if (selectedFiles.length > 0) {

@@ -8,6 +8,7 @@ import { FileUpload } from '../../../components/ui/FileUpload';
 import { AttachmentItem } from '../../../components/attachments/AttachmentItem';
 import { SeverityLevel } from '../../../types/bug';
 import { bugAPI, attachmentAPI } from '../../../services/api-client';
+import { UpdateBugRequest } from '../../../types/bug';
 
 interface BugDetailPageProps {
   params: {
@@ -19,13 +20,22 @@ export default function BugDetailPage({ params }: BugDetailPageProps) {
   const router = useRouter();
   const bugId = params.id;
   const { bug, isLoading, error } = useBugById(bugId);
+  const refreshBug = () => window.location.reload();
   
+  // Original state variables
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [showAttachmentContent, setShowAttachmentContent] = useState<string | null>(null);
   const [attachmentContent, setAttachmentContent] = useState<any>(null);
   const [contentLoading, setContentLoading] = useState(false);
+  
+  // Edit mode state variables
+  const [editMode, setEditMode] = useState<'title' | 'description' | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   
   const getSeverityBadgeColor = (severity: SeverityLevel) => {
     switch (severity) {
@@ -46,7 +56,7 @@ export default function BugDetailPage({ params }: BugDetailPageProps) {
     if (window.confirm('Are you sure you want to delete this bug? This action cannot be undone.')) {
       try {
         setIsDeleting(true);
-        await bugAPI.deleteBug(bugId);
+        await bugAPI.delete(bugId);
         router.push('/bugs');
       } catch (error) {
         console.error('Error deleting bug:', error);
@@ -95,6 +105,62 @@ export default function BugDetailPage({ params }: BugDetailPageProps) {
       setContentLoading(false);
     }
   };
+  
+  // Start editing a field
+  const startEditing = (field: 'title' | 'description') => {
+    if (!bug) return;
+    
+    if (field === 'title') {
+      setEditTitle(bug.title);
+    } else if (field === 'description') {
+      setEditDescription(bug.description);
+    }
+    
+    setEditMode(field);
+    setSaveError(null);
+  };
+  
+  // Cancel editing
+  const cancelEditing = () => {
+    setEditMode(null);
+    setSaveError(null);
+  };
+  
+  // Save edited field
+  const saveField = async () => {
+    if (!bug || !editMode) return;
+    
+    try {
+      setIsSaving(true);
+      setSaveError(null);
+      
+      const updateData: UpdateBugRequest = {};
+      
+      if (editMode === 'title') {
+        if (!editTitle.trim()) {
+          setSaveError('Title cannot be empty');
+          setIsSaving(false);
+          return;
+        }
+        updateData.title = editTitle.trim();
+      } else if (editMode === 'description') {
+        updateData.description = editDescription.trim();
+      }
+      
+      await bugAPI.update(bug.bug_id, updateData);
+      
+      // Refresh the bug data
+      await refreshBug();
+      
+      // Exit edit mode
+      setEditMode(null);
+    } catch (error) {
+      console.error('Error updating bug:', error);
+      setSaveError('Failed to save changes. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -123,7 +189,52 @@ export default function BugDetailPage({ params }: BugDetailPageProps) {
     <div>
       <div className="flex justify-between items-start mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{bug.title}</h1>
+          {editMode === 'title' ? (
+            <div className="space-y-2">
+              <textarea
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-2xl font-bold"
+                rows={2}
+                placeholder="Bug title"
+                autoFocus
+              />
+              {saveError && (
+                <div className="text-sm text-red-600">{saveError}</div>
+              )}
+              <div className="flex space-x-2">
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={saveField}
+                  isLoading={isSaving}
+                >
+                  Save
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={cancelEditing}
+                  disabled={isSaving}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="group relative">
+              <h1 className="text-2xl font-bold text-gray-900">{bug.title}</h1>
+              <button
+                onClick={() => startEditing('title')}
+                className="absolute -right-8 top-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                aria-label="Edit title"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500 hover:text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                </svg>
+              </button>
+            </div>
+          )}
           <div className="flex items-center mt-1 space-x-3">
             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getSeverityBadgeColor(bug.severity)}`}>
               {bug.severity.charAt(0).toUpperCase() + bug.severity.slice(1)}
@@ -152,7 +263,51 @@ export default function BugDetailPage({ params }: BugDetailPageProps) {
 
       <div className="bg-white shadow rounded-lg p-6 mb-6">
         <h2 className="text-lg font-medium mb-3">Description</h2>
-        <p className="whitespace-pre-wrap text-gray-700">{bug.description}</p>
+        {editMode === 'description' ? (
+          <div className="space-y-2">
+            <textarea
+              value={editDescription}
+              onChange={(e) => setEditDescription(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[150px]"
+              placeholder="Bug description"
+              autoFocus
+            />
+            {saveError && (
+              <div className="text-sm text-red-600">{saveError}</div>
+            )}
+            <div className="flex space-x-2">
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={saveField}
+                isLoading={isSaving}
+              >
+                Save
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={cancelEditing}
+                disabled={isSaving}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="group relative">
+            <p className="whitespace-pre-wrap text-gray-700">{bug.description || <span className="text-gray-400 italic">No description provided</span>}</p>
+            <button
+              onClick={() => startEditing('description')}
+              className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity"
+              aria-label="Edit description"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500 hover:text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+              </svg>
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="bg-white shadow rounded-lg p-6 mb-6">
