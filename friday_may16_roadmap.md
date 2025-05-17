@@ -81,9 +81,9 @@ Given your time constraints and the desire to make meaningful progress, I've str
 - **Basic Authentication/Authorization** (Optional, if time permits)
   - Consider a simple API key mechanism.
 
-## 5. Frontend for Bug Creation (2-2.5 hours)
+## 5. Frontend for Bug Creation (3-3.5 hours)
 
-- **Technology Choice**: Simple HTML, CSS, and JavaScript (to avoid Node.js/React setup time for this iteration).
+- **Technology Choice**: Next.js with React (for a more robust solution with better API integration).
 - **Core Functionality**:
   - Form to input bug details (based on "Base Model"):
     - Title (text input)
@@ -91,12 +91,16 @@ Given your time constraints and the desire to make meaningful progress, I've str
     - Reporter (text input, optional)
     - Severity (dropdown: e.g., Low, Medium, High, Critical)
     - File Upload for attachments (multiple files allowed)
-  - JavaScript to handle form submission via `fetch` to the `POST /bugs` API endpoint.
-  - Basic UI to display success/error messages from the API.
+  - React components for form handling and API integration.
+  - API client service for interacting with the FastAPI backend.
+  - UI feedback for success/error states with modern React components.
+  - Bug listing page to view all bugs and their attachments.
+  - Detail view for individual bugs with attachment management.
 - **Structure**:
-  - `index.html`: Main page with the form.
-  - `style.css`: Basic styling.
-  - `script.js`: Form handling and API interaction logic.
+  - Next.js app with TypeScript for better type safety
+  - API integration layer with Axios or React Query
+  - Component-based architecture for reusability
+  - Basic styling with either Tailwind CSS or styled-components
 
 ## 6. External Bug Data Ingestion (2.5-3.5 hours)
 
@@ -229,18 +233,18 @@ Given your time constraints and the desire to make meaningful progress, I've str
 | Day 1 Evening     | 3. Database Layer Implementation (SQLAlchemy)      | 2.5             | 4.75             |
 |                   | Break                                              | 0.5             | 5.25             |
 |                   | 4. API Layer for Database Interaction              | 2               | 7.25             |
-| Day 2 Morning     | 5. Frontend for Bug Creation                       | 2.5             | 9.75             |
-|                   | 6.1. Bugzilla API Client                           | 1.5             | 11.25            |
-| Day 2 Afternoon   | 6.2. Chromium Issues Web Crawler                 | 2               | 13.25            |
-|                   | 6.3. Data Transformation & Loading                 | 1               | 14.25            |
-|                   | Break                                              | 0.5             | 14.75            |
-| Day 2 Evening     | 7. Attachment Processor Refinement                 | 2.5             | 17.25            |
-| Day 3 Morning     | 8. LLM Multimodal Reasoning Chain                  | 3               | 20.25            |
-| Day 3 Afternoon   | 9. Integration Testing & Task Graph API            | 3               | 23.25            |
-| Day 3 Evening     | 10. Computer Use Agent (CUA) Integration & Execution | 3.5             | 26.75            |
-| Day 4 Morning     | 11. Documentation Updates                          | 1.5             | 28.25            |
+| Day 2 Morning     | 5. Frontend for Bug Creation (Next.js/React)      | 3.5             | 10.75            |
+|                   | 6.1. Bugzilla API Client                           | 1.5             | 12.25            |
+| Day 2 Afternoon   | 6.2. Chromium Issues Web Crawler                 | 2               | 14.25            |
+|                   | 6.3. Data Transformation & Loading                 | 1               | 15.25            |
+|                   | Break                                              | 0.5             | 15.75            |
+| Day 2 Evening     | 7. Attachment Processor Refinement                 | 2.5             | 18.25            |
+| Day 3 Morning     | 8. LLM Multimodal Reasoning Chain                  | 3               | 21.25            |
+| Day 3 Afternoon   | 9. Integration Testing & Task Graph API            | 3               | 24.25            |
+| Day 3 Evening     | 10. Computer Use Agent (CUA) Integration & Execution | 3.5             | 27.75            |
+| Day 4 Morning     | 11. Documentation Updates                          | 1.5             | 29.25            |
 
-**Total Estimated Hours: ~28.5 hours**
+**Total Estimated Hours: ~29.5 hours**
 
 ## Priority Order (If Time Becomes Limited - Staged Approach)
 
