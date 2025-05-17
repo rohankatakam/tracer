@@ -9,11 +9,12 @@ interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>
   label?: string;
   options: SelectOption[];
   error?: string;
+  helpText?: string;
   onChange?: (value: string) => void;
 }
 
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(
-  ({ label, options, error, onChange, className = '', ...props }, ref) => {
+  ({ label, options, error, helpText, onChange, className = '', ...props }, ref) => {
     const errorClass = error ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : '';
     
     const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -43,6 +44,9 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         </select>
         {error && (
           <p className="mt-1 text-sm text-red-600">{error}</p>
+        )}
+        {helpText && !error && (
+          <p className="mt-1 text-xs text-gray-500">{helpText}</p>
         )}
       </div>
     );

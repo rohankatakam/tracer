@@ -2,17 +2,36 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAllBugs } from '../../hooks/useBugs';
 import { BugCard } from '../../components/bugs/BugCard';
-import { SeverityLevel } from '../../types/bug';
+import { BaseSeverity, Bug, BaseTypeBug, MozillaBug, ChromiumBug, OracleBug } from '../../types/bug';
 
 export default function BugListPage() {
   const { bugs, isLoading, error } = useAllBugs();
-  const [severityFilter, setSeverityFilter] = useState<SeverityLevel | 'all'>('all');
+  const [severityFilter, setSeverityFilter] = useState<BaseSeverity | 'all'>('all');
 
-  const filteredBugs = bugs.filter(bug => 
-    severityFilter === 'all' || bug.severity === severityFilter
-  );
+  const filteredBugs = bugs.filter(bug => {
+    if (severityFilter === 'all') return true;
+    
+    // Handle different bug schema types
+    switch (bug.schema_type) {
+      case 'base':
+        return (bug as BaseTypeBug).severity === severityFilter;
+      case 'mozilla':
+        // For Mozilla bugs, try to match BaseSeverity names to MozillaSeverity
+        // This is approximate as the severities don't exactly match
+        return (bug as MozillaBug).mozilla_severity?.toLowerCase().includes(severityFilter.toLowerCase());
+      case 'chromium':
+        // For Chromium bugs, check if they have a matching priority instead
+        return false; // We could implement a more sophisticated mapping here
+      case 'oracle':
+        // For Oracle bugs, check if they have a matching severity
+        return (bug as OracleBug).oracle_severity?.toLowerCase() === severityFilter.toLowerCase();
+      default:
+        return false;
+    }
+  });
 
   return (
     <div>
@@ -36,7 +55,7 @@ export default function BugListPage() {
           >
             All
           </button>
-          {Object.values(SeverityLevel).map((severity) => (
+          {Object.values(BaseSeverity).map((severity) => (
             <button
               key={severity}
               onClick={() => setSeverityFilter(severity)}
@@ -83,7 +102,7 @@ export default function BugListPage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filteredBugs.map(bug => (
-            <BugCard key={bug.id} bug={bug} />
+            <BugCard key={bug.bug_id} bug={bug} />
           ))}
         </div>
       )}

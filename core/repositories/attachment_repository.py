@@ -9,6 +9,8 @@ from typing import List, Optional, Dict, Any, Union
 from sqlalchemy.orm import Session
 from sqlalchemy import select
 from datetime import datetime
+import os
+from api.schemas import Attachment as PydanticAttachment
 
 from core.models.db import Attachment, TextContent, ImageContent, PDFContent, VideoContent
 from core.repositories.base_repository import BaseRepository
@@ -135,17 +137,44 @@ class AttachmentRepository(BaseRepository[Attachment]):
         # Save to database
         return self.create(db_attachment)
     
-    def to_pydantic_model(self, attachment: Attachment) -> PydanticBugAttachment:
+    def to_pydantic_model(self, attachment: Attachment) -> PydanticAttachment:
         """
-        Convert a SQLAlchemy Attachment to a Pydantic BugAttachment.
+        Convert a SQLAlchemy Attachment to a Pydantic Attachment model for API response.
         
         Args:
             attachment: SQLAlchemy Attachment instance
             
         Returns:
-            Pydantic BugAttachment instance
+            Pydantic Attachment instance with all required fields
         """
-        return attachment.to_pydantic()
+        # Determine content type based on file extension
+        content_type = "application/octet-stream"
+        if attachment.file_extension:
+            if attachment.file_extension.lower() in ['jpg', 'jpeg']:
+                content_type = "image/jpeg"
+            elif attachment.file_extension.lower() == 'png':
+                content_type = "image/png"
+            elif attachment.file_extension.lower() == 'pdf':
+                content_type = "application/pdf"
+            elif attachment.file_extension.lower() == 'txt':
+                content_type = "text/plain"
+            elif attachment.file_extension.lower() == 'mp4':
+                content_type = "video/mp4"
+            else:
+                content_type = f"application/{attachment.file_extension.lower()}"
+        
+        # Create a Pydantic model with all required fields
+        return PydanticAttachment(
+            attachment_id=attachment.attachment_id,
+            bug_id=attachment.bug_id,
+            filename=attachment.filename,
+            content_type=content_type,
+            size=attachment.file_size,
+            created_at=attachment.upload_timestamp,
+            content_id=None,  # Optional field
+            attachment_type=attachment.file_type,
+            processing_status=attachment.processing_status
+        )
         
 
 class TextContentRepository(BaseRepository[TextContent]):

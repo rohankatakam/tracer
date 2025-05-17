@@ -29,10 +29,10 @@ async def create_attachment(
     db: Session = Depends(get_db_session)
 ):
     """Upload a new attachment for a bug."""
-    # Check if bug exists
+    # Check if bug exists using direct SQL to bypass enum validation
     bug_repo = BugRepository(db)
-    bug = bug_repo.get_bug_by_id(bug_id)
-    if not bug:
+    bug_dict = bug_repo.get_bug_by_id(bug_id)
+    if not bug_dict:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Bug with ID {bug_id} not found"
@@ -101,10 +101,10 @@ async def create_attachment(
 @router.get("/bugs/{bug_id}/attachments", response_model=List[Attachment])
 def get_bug_attachments(bug_id: str, db: Session = Depends(get_db_session)):
     """Get all attachments for a specific bug."""
-    # Check if bug exists
+    # Check if bug exists using direct SQL to bypass enum validation
     bug_repo = BugRepository(db)
-    bug = bug_repo.get_bug_by_id(bug_id)
-    if not bug:
+    bug_dict = bug_repo.get_bug_by_id(bug_id)
+    if not bug_dict:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Bug with ID {bug_id} not found"

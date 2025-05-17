@@ -1,35 +1,272 @@
-export enum SeverityLevel {
+// Common enums for all bug types
+export enum BugSchemaType {
+  BASE = 'base',
+  MOZILLA = 'mozilla',
+  CHROMIUM = 'chromium',
+  ORACLE = 'oracle',
+}
+
+// Base type enums
+export enum BaseSeverity {
   LOW = 'low',
   MEDIUM = 'medium',
   HIGH = 'high',
   CRITICAL = 'critical',
 }
 
-export interface Bug {
+export enum BaseStatus {
+  NEW = 'NEW',
+  IN_PROGRESS = 'IN_PROGRESS',
+  RESOLVED = 'RESOLVED',
+  CLOSED = 'CLOSED',
+}
+
+// Mozilla/Bugzilla specific enums
+export enum MozillaSeverity {
+  BLOCKER = 'blocker',
+  CRITICAL = 'critical',
+  MAJOR = 'major',
+  NORMAL = 'normal',
+  MINOR = 'minor',
+  TRIVIAL = 'trivial',
+  ENHANCEMENT = 'enhancement',
+}
+
+export enum MozillaPriority {
+  P1 = 'P1',
+  P2 = 'P2',
+  P3 = 'P3',
+  P4 = 'P4',
+  P5 = 'P5',
+}
+
+export enum MozillaStatus {
+  UNCONFIRMED = 'UNCONFIRMED',
+  NEW = 'NEW',
+  ASSIGNED = 'ASSIGNED',
+  RESOLVED = 'RESOLVED',
+  VERIFIED = 'VERIFIED',
+  REOPENED = 'REOPENED',
+}
+
+export enum MozillaResolution {
+  FIXED = 'FIXED',
+  INVALID = 'INVALID',
+  WONTFIX = 'WONTFIX',
+  DUPLICATE = 'DUPLICATE',
+  WORKSFORME = 'WORKSFORME',
+  INCOMPLETE = 'INCOMPLETE',
+}
+
+// Chromium specific enums
+export enum ChromiumPriority {
+  P0 = 'P0',
+  P1 = 'P1',
+  P2 = 'P2',
+  P3 = 'P3',
+  P4 = 'P4',
+}
+
+export enum ChromiumType {
+  BUG = 'Bug',
+  FEATURE = 'Feature',
+  FEATURE_REQUEST = 'Feature Request',
+  TASK = 'Task',
+}
+
+export enum ChromiumStatus {
+  UNCONFIRMED = 'Unconfirmed',
+  UNTRIAGED = 'Untriaged',
+  ASSIGNED = 'Assigned',
+  STARTED = 'Started',
+  FIXED = 'Fixed',
+  VERIFIED = 'Verified',
+  DUPLICATE = 'Duplicate',
+  WONTFIX = 'WontFix',
+  ARCHIVED = 'Archived',
+}
+
+// Common bug interface with schema discrimination
+export interface BaseBug {
   bug_id: string;
   title: string;
-  description: string;
-  reporter: string;
-  severity: SeverityLevel;
+  description?: string;
+  reporter?: string;
   created_at: string;
   updated_at: string;
+  product?: string;
+  component?: string;
+  version?: string;
+  platform?: string;
+  operating_system?: string;
+  schema_type: BugSchemaType;
   attachment_count?: number;
   attachments?: Attachment[];
+  extra_data?: Record<string, any>;
 }
 
-export interface CreateBugRequest {
+// Base schema bug
+export interface BaseTypeBug extends BaseBug {
+  schema_type: BugSchemaType.BASE;
+  severity?: BaseSeverity;
+  status?: BaseStatus;
+}
+
+// Mozilla/Bugzilla schema bug
+export interface MozillaBug extends BaseBug {
+  schema_type: BugSchemaType.MOZILLA;
+  mozilla_severity?: MozillaSeverity;
+  mozilla_priority?: MozillaPriority;
+  mozilla_status?: MozillaStatus;
+  mozilla_resolution?: MozillaResolution;
+  mozilla_version?: string;
+  mozilla_component?: string;
+  mozilla_keywords?: string;
+}
+
+// Chromium schema bug
+export interface ChromiumBug extends BaseBug {
+  schema_type: BugSchemaType.CHROMIUM;
+  chromium_priority?: ChromiumPriority;
+  chromium_type?: ChromiumType;
+  chromium_status?: ChromiumStatus;
+  chromium_component?: string;
+  chromium_owner?: string;
+  chromium_cc?: string;
+  chromium_labels?: string;
+}
+
+// Oracle schema bug
+export interface OracleBug extends BaseBug {
+  schema_type: BugSchemaType.ORACLE;
+  oracle_status_code?: number;
+  oracle_status_description?: string;
+  oracle_severity?: string;
+  oracle_priority?: string;
+  oracle_close_reason?: string;
+  oracle_environment?: string;
+}
+
+// Bug union type for all schemas
+export type Bug = BaseTypeBug | MozillaBug | ChromiumBug | OracleBug;
+
+// Create bug request types
+export interface BaseCreateBugRequest {
   title: string;
-  description: string;
-  reporter: string;
-  severity: SeverityLevel;
+  description?: string;
+  reporter?: string;
+  product?: string;
+  component?: string;
+  version?: string;
+  platform?: string;
+  operating_system?: string;
+  schema_type: BugSchemaType;
+  extra_data?: Record<string, any>;
 }
 
-export interface UpdateBugRequest {
+// Base type create request
+export interface BaseTypeCreateRequest extends BaseCreateBugRequest {
+  schema_type: BugSchemaType.BASE;
+  severity?: BaseSeverity;
+  status?: BaseStatus;
+}
+
+// Mozilla type create request
+export interface MozillaCreateRequest extends BaseCreateBugRequest {
+  schema_type: BugSchemaType.MOZILLA;
+  mozilla_severity?: MozillaSeverity;
+  mozilla_priority?: MozillaPriority;
+  mozilla_status?: MozillaStatus;
+  mozilla_resolution?: MozillaResolution;
+  mozilla_version?: string;
+  mozilla_component?: string;
+  mozilla_keywords?: string;
+}
+
+// Chromium type create request
+export interface ChromiumCreateRequest extends BaseCreateBugRequest {
+  schema_type: BugSchemaType.CHROMIUM;
+  chromium_priority?: ChromiumPriority;
+  chromium_type?: ChromiumType;
+  chromium_status?: ChromiumStatus;
+  chromium_component?: string;
+  chromium_owner?: string;
+  chromium_cc?: string;
+  chromium_labels?: string;
+}
+
+// Oracle type create request
+export interface OracleCreateRequest extends BaseCreateBugRequest {
+  schema_type: BugSchemaType.ORACLE;
+  oracle_status_code?: number;
+  oracle_status_description?: string;
+  oracle_severity?: string;
+  oracle_priority?: string;
+  oracle_close_reason?: string;
+  oracle_environment?: string;
+}
+
+// Create request union type
+export type CreateBugRequest = BaseTypeCreateRequest | MozillaCreateRequest | ChromiumCreateRequest | OracleCreateRequest;
+
+// Update bug request types (similar to create but all fields optional)
+export interface BaseUpdateBugRequest {
   title?: string;
   description?: string;
   reporter?: string;
-  severity?: SeverityLevel;
+  product?: string;
+  component?: string;
+  version?: string;
+  platform?: string;
+  operating_system?: string;
+  schema_type?: BugSchemaType;
+  extra_data?: Record<string, any>;
 }
+
+// Base type update request
+export interface BaseTypeUpdateRequest extends BaseUpdateBugRequest {
+  schema_type?: BugSchemaType.BASE;
+  severity?: BaseSeverity;
+  status?: BaseStatus;
+}
+
+// Mozilla type update request
+export interface MozillaUpdateRequest extends BaseUpdateBugRequest {
+  schema_type?: BugSchemaType.MOZILLA;
+  mozilla_severity?: MozillaSeverity;
+  mozilla_priority?: MozillaPriority;
+  mozilla_status?: MozillaStatus;
+  mozilla_resolution?: MozillaResolution;
+  mozilla_version?: string;
+  mozilla_component?: string;
+  mozilla_keywords?: string;
+}
+
+// Chromium type update request
+export interface ChromiumUpdateRequest extends BaseUpdateBugRequest {
+  schema_type?: BugSchemaType.CHROMIUM;
+  chromium_priority?: ChromiumPriority;
+  chromium_type?: ChromiumType;
+  chromium_status?: ChromiumStatus;
+  chromium_component?: string;
+  chromium_owner?: string;
+  chromium_cc?: string;
+  chromium_labels?: string;
+}
+
+// Oracle type update request
+export interface OracleUpdateRequest extends BaseUpdateBugRequest {
+  schema_type?: BugSchemaType.ORACLE;
+  oracle_status_code?: number;
+  oracle_status_description?: string;
+  oracle_severity?: string;
+  oracle_priority?: string;
+  oracle_close_reason?: string;
+  oracle_environment?: string;
+}
+
+// Update request union type
+export type UpdateBugRequest = BaseTypeUpdateRequest | MozillaUpdateRequest | ChromiumUpdateRequest | OracleUpdateRequest;
 
 export interface Attachment {
   attachment_id: string;
@@ -50,5 +287,5 @@ export interface Attachment {
     pdf_content_id: string | null;
     video_content_id: string | null;
   };
-  metadata?: Record<string, any>;
+  extra_data?: Record<string, any>;
 }

@@ -1,24 +1,42 @@
 import React from 'react';
 import Link from 'next/link';
-import { Bug, SeverityLevel } from '../../types/bug';
+import { Bug, BaseSeverity, BaseTypeBug, MozillaBug, ChromiumBug, OracleBug, BugSchemaType } from '../../types/bug';
 
 interface BugCardProps {
   bug: Bug;
 }
 
 export const BugCard: React.FC<BugCardProps> = ({ bug }) => {
-  const getSeverityBadgeColor = (severity: SeverityLevel) => {
-    switch (severity) {
-      case SeverityLevel.LOW:
-        return 'bg-blue-100 text-blue-800';
-      case SeverityLevel.MEDIUM:
-        return 'bg-yellow-100 text-yellow-800';
-      case SeverityLevel.HIGH:
-        return 'bg-orange-100 text-orange-800';
-      case SeverityLevel.CRITICAL:
-        return 'bg-red-100 text-red-800';
+  const getSeverityBadgeColor = (severity: string) => {
+    const severityLower = severity.toLowerCase();
+    
+    if (severityLower.includes('low') || severityLower.includes('minor') || severityLower.includes('trivial')) {
+      return 'bg-blue-100 text-blue-800';
+    } else if (severityLower.includes('medium') || severityLower.includes('normal')) {
+      return 'bg-yellow-100 text-yellow-800';
+    } else if (severityLower.includes('high') || severityLower.includes('major')) {
+      return 'bg-orange-100 text-orange-800';
+    } else if (severityLower.includes('critical') || severityLower.includes('blocker')) {
+      return 'bg-red-100 text-red-800';
+    } else {
+      return 'bg-gray-100 text-gray-800';
+    }
+  };
+  
+  // Get the appropriate severity text based on bug schema type
+  const getSeverityText = (bug: Bug): string => {
+    switch (bug.schema_type) {
+      case BugSchemaType.BASE:
+        return (bug as BaseTypeBug).severity || 'Unknown';
+      case BugSchemaType.MOZILLA:
+        return (bug as MozillaBug).mozilla_severity || 'Unknown';
+      case BugSchemaType.CHROMIUM:
+        // Chromium doesn't have severity but has priority
+        return (bug as ChromiumBug).chromium_priority || 'Unknown';
+      case BugSchemaType.ORACLE:
+        return (bug as OracleBug).oracle_severity || 'Unknown';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'Unknown';
     }
   };
 
@@ -33,8 +51,8 @@ export const BugCard: React.FC<BugCardProps> = ({ bug }) => {
             {bug.title}
           </Link>
         </h3>
-        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getSeverityBadgeColor(bug.severity)}`}>
-          {bug.severity.charAt(0).toUpperCase() + bug.severity.slice(1)}
+        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getSeverityBadgeColor(getSeverityText(bug))}`}>
+          {getSeverityText(bug).charAt(0).toUpperCase() + getSeverityText(bug).slice(1)}
         </span>
       </div>
       

@@ -74,6 +74,18 @@ const apiClient = axios.create({
 // Bug-related API calls
 export const bugAPI = {
   /**
+   * Fetches all bugs from the fixed API endpoint
+   */
+  async getAllFixed(): Promise<Bug[]> {
+    try {
+      const response = await apiClient.get('/bugs-fixed');
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      return []; // This line won't be reached if handleApiError throws
+    }
+  },
+  /**
    * Fetches all bugs from the API
    */
   async getAll(): Promise<Bug[]> {
@@ -83,6 +95,21 @@ export const bugAPI = {
     } catch (error) {
       handleApiError(error);
       return []; // This line won't be reached if handleApiError throws
+    }
+  },
+
+  /**
+   * Gets a specific bug by ID
+   */
+  async getByIdFixed(id: string): Promise<Bug> {
+    try {
+      // Ensure the ID is properly encoded for use in a URL
+      const encodedId = encodeURIComponent(id);
+      const response = await apiClient.get(`/bugs-fixed/${encodedId}`);
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      throw error;
     }
   },
 
