@@ -81,26 +81,50 @@ Given your time constraints and the desire to make meaningful progress, I've str
 - **Basic Authentication/Authorization** (Optional, if time permits)
   - Consider a simple API key mechanism.
 
-## 5. Frontend for Bug Creation (3-3.5 hours)
+## 5. Frontend for Bug Creation and Management (COMPLETED ✅)
 
 - **Technology Choice**: Next.js with React (for a more robust solution with better API integration).
-- **Core Functionality**:
-  - Form to input bug details (based on "Base Model"):
+- **Core Functionality Implemented**:
+  - Form to input bug details:
     - Title (text input)
     - Description (textarea)
-    - Reporter (text input, optional)
-    - Severity (dropdown: e.g., Low, Medium, High, Critical)
-    - File Upload for attachments (multiple files allowed)
-  - React components for form handling and API integration.
-  - API client service for interacting with the FastAPI backend.
-  - UI feedback for success/error states with modern React components.
-  - Bug listing page to view all bugs and their attachments.
-  - Detail view for individual bugs with attachment management.
+    - Reporter (text input)
+    - Severity (dropdown: Low, Medium, High, Critical)
+    - File Upload for attachments (multiple types supported)
+  - React components for form handling and API integration
+  - API client service with Axios for interacting with the FastAPI backend
+  - UI feedback for success/error states with modern components
+  - Bug listing page to view all bugs with filtering options
+  - Detail view for individual bugs with attachment management
+  - Attachment previews for images, PDFs, and text files
 - **Structure**:
   - Next.js app with TypeScript for better type safety
-  - API integration layer with Axios or React Query
+  - API integration layer with Axios
   - Component-based architecture for reusability
-  - Basic styling with either Tailwind CSS or styled-components
+  - Styling with Tailwind CSS
+  
+## 5.1 Frontend Enhancements (TODO)
+
+- **Editable Fields**:
+  - Add ability to edit bug descriptions and details inline
+  - Implement saving changes through the API
+  - Add UI feedback for edit operations
+- **Attachment Enhancements**:
+  - Add support for referencing attachments within bug messages
+  - Implement UI for selecting and linking to attachments
+  - Track attachment references for taskgraph planning algorithm
+- **Bug Status Management**:
+  - Add ability to view and edit bug status on the detail page
+  - Implement status workflow (New → In Progress → Resolved → Closed)
+  - Add visual indicators for bug status
+- **Comments System**:
+  - Add ability to create and view comments on bugs
+  - Implement threaded replies for deeper discussions
+  - Allow attachments in comments
+- **UI/UX Improvements**:
+  - Add dark mode support
+  - Implement responsive design improvements
+  - Add keyboard shortcuts for power users
 
 ## 6. External Bug Data Ingestion (2.5-3.5 hours)
 

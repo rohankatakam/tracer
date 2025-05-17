@@ -135,6 +135,9 @@ def get_attachment(attachment_id: str, db: Session = Depends(get_db_session)):
 @router.get("/attachments/{attachment_id}/content")
 async def get_attachment_content(attachment_id: str, db: Session = Depends(get_db_session)):
     """Get the content of a specific attachment."""
+    import base64
+    from pathlib import Path
+    
     attachment_repo = AttachmentRepository(db)
     attachment = attachment_repo.get_attachment_by_id(attachment_id)
     if not attachment:
@@ -143,51 +146,121 @@ async def get_attachment_content(attachment_id: str, db: Session = Depends(get_d
             detail=f"Attachment with ID {attachment_id} not found"
         )
     
-    # Different handling based on attachment type
-    if attachment.file_type == str(AttachmentType.TEXT.value):
-        if attachment.text_contents and len(attachment.text_contents) > 0:
-            text_content = attachment.text_contents[0]
-            return {
-                "type": "text",
-                "content": text_content.content,
-                "metadata": {
-                    "language": text_content.language,
-                    "encoding": text_content.encoding,
-                    "extraction_method": text_content.extraction_method
+    # Make sure the file exists
+    if not os.path.exists(attachment.file_path):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Attachment file not found on disk"
+        )
+        
+    # Handle image files (png, jpg, jpeg) directly
+    if attachment.file_type in [
+        str(AttachmentType.IMAGE_PNG.value),
+        str(AttachmentType.IMAGE_JPG.value),
+        str(AttachmentType.IMAGE_JPEG.value)
+    ]:
+        try:
+            with open(attachment.file_path, "rb") as img_file:
+                base64_content = base64.b64encode(img_file.read()).decode('utf-8')
+                return {
+                    "content_type": f"image/{attachment.file_extension}",
+                    "base64_content": base64_content,
+                    "filename": attachment.filename,
+                    "file_size": attachment.file_size
                 }
-            }
-    elif attachment.file_type == str(AttachmentType.IMAGE.value):
-        if attachment.image_contents and len(attachment.image_contents) > 0:
-            image_content = attachment.image_contents[0]
-            return {
-                "type": "image",
-                "file_path": image_content.file_path,
-                "metadata": image_content.meta_data
-            }
-    elif attachment.file_type == str(AttachmentType.PDF.value):
-        if attachment.pdf_content:
-            return {
-                "type": "pdf",
-                "file_path": attachment.file_path,
-                "pages": [
-                    {"page_number": page.page_number, "text": page.text}
-                    for page in attachment.pdf_content.pages
-                ]
-            }
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error reading image file: {str(e)}"
+            )
+    
+    # Text file handling        
+    elif attachment.file_type == str(AttachmentType.TEXT.value):
+        try:
+            with open(attachment.file_path, "r") as text_file:
+                text_content = text_file.read()
+                return {
+                    "content_type": "text/plain",
+                    "text_content": text_content,
+                    "filename": attachment.filename,
+                    "file_size": attachment.file_size
+                }
+        except Exception as e:
+            # If we can't read as text, try processed content if available
+            if attachment.text_contents and len(attachment.text_contents) > 0:
+                text_content = attachment.text_contents[0]
+                return {
+                    "content_type": "text/plain",
+                    "text_content": text_content.content,
+                    "metadata": {
+                        "language": text_content.language,
+                        "encoding": text_content.encoding,
+                        "extraction_method": text_content.extraction_method
+                    }
+                }
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"Error reading text file: {str(e)}"
+                )
+    
+    # PDF handling
+    elif attachment.file_type == str(AttachmentType.PDF.value) or attachment.file_extension == 'pdf':
+        try:
+            # If we have processed PDF content, return that
+            if attachment.pdf_content:
+                return {
+                    "content_type": "application/pdf",
+                    "pages": [
+                        {"page_number": page.page_number, "text": page.text}
+                        for page in attachment.pdf_content.pages
+                    ],
+                    "filename": attachment.filename,
+                    "file_size": attachment.file_size
+                }
+            # Otherwise return the raw PDF file
+            else:
+                with open(attachment.file_path, "rb") as pdf_file:
+                    base64_content = base64.b64encode(pdf_file.read()).decode('utf-8')
+                    return {
+                        "content_type": "application/pdf",
+                        "base64_content": base64_content,
+                        "filename": attachment.filename,
+                        "file_size": attachment.file_size
+                    }
+        except Exception as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Error reading PDF file: {str(e)}"
+            )
+            
+    # Video handling
     elif attachment.file_type == str(AttachmentType.VIDEO.value):
         if attachment.video_content:
             return {
-                "type": "video",
+                "content_type": "video/mp4",
                 "file_path": attachment.file_path,
                 "metadata": attachment.video_content.meta_data,
-                "frame_count": len(attachment.video_content.frames)
+                "frame_count": len(attachment.video_content.frames),
+                "filename": attachment.filename,
+                "file_size": attachment.file_size
+            }
+        else:
+            # Return basic info if no processed content
+            return {
+                "content_type": "video/mp4",
+                "message": "Video processing not available",
+                "filename": attachment.filename,
+                "file_size": attachment.file_size
             }
     
-    # Default to returning basic file info
+    # Default to returning basic file info for other types
     return {
-        "type": attachment.file_type,
-        "file_path": attachment.file_path,
-        "file_size": attachment.file_size
+        "content_type": f"application/{attachment.file_extension}",
+        "message": "Content preview not available for this file type",
+        "filename": attachment.filename,
+        "file_size": attachment.file_size,
+        "file_type": attachment.file_type
     }
 
 
