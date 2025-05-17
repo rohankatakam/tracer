@@ -6,6 +6,7 @@ import { useBugById } from '../../../hooks/useBugs';
 import { Button } from '../../../components/ui/Button';
 import { FileUpload } from '../../../components/ui/FileUpload';
 import { AttachmentItem } from '../../../components/attachments/AttachmentItem';
+import { CommentSection } from '../../../components/comments/CommentSection';
 import { SeverityLevel } from '../../../types/bug';
 import { bugAPI, attachmentAPI } from '../../../services/api-client';
 import { UpdateBugRequest } from '../../../types/bug';
@@ -18,8 +19,15 @@ interface BugDetailPageProps {
 
 export default function BugDetailPage({ params }: BugDetailPageProps) {
   const router = useRouter();
+  
+  // Normalize the bug ID to ensure consistent formatting
   const bugId = params.id;
+  
+  // Log the ID from the URL for debugging
+  console.log(`Bug ID from URL: ${bugId}`);
+  
   const { bug, isLoading, error } = useBugById(bugId);
+  
   const refreshBug = () => window.location.reload();
   
   // Original state variables
@@ -335,6 +343,16 @@ export default function BugDetailPage({ params }: BugDetailPageProps) {
             error={uploadError || undefined}
           />
         </div>
+      </div>
+
+      <div className="bg-white shadow rounded-lg p-6 mb-6">
+        <h2 className="text-lg font-medium mb-3">Comments</h2>
+        {bug && (
+          <CommentSection 
+            bugId={bug.bug_id} 
+            attachments={bug.attachments || []}
+          />
+        )}
       </div>
 
       {/* Attachment Content Modal */}

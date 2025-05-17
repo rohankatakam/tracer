@@ -8,6 +8,32 @@
 import axios, { AxiosError } from 'axios';
 import { Bug, CreateBugRequest, UpdateBugRequest } from '../types/bug';
 
+// Define comment types here directly if there are import issues
+interface Comment {
+  comment_id: string;
+  bug_id: string;
+  author: string;
+  text: string;
+  timestamp: string;
+  is_private?: boolean;
+  attachment_ids?: string[];
+}
+
+interface CommentBase {
+  author: string;
+  text: string;
+  is_private?: boolean;
+  attachment_ids?: string[];
+}
+
+interface CreateCommentRequest extends CommentBase {}
+
+interface UpdateCommentRequest {
+  text?: string;
+  is_private?: boolean;
+  attachment_ids?: string[];
+}
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
 
 /**
@@ -65,11 +91,13 @@ export const bugAPI = {
    */
   async getById(id: string): Promise<Bug> {
     try {
-      const response = await apiClient.get(`/bugs/${id}`);
+      // Ensure the ID is properly encoded for use in a URL
+      const encodedId = encodeURIComponent(id);
+      const response = await apiClient.get(`/bugs/${encodedId}`);
       return response.data;
     } catch (error) {
       handleApiError(error);
-      throw error; // This line won't be reached if handleApiError throws
+      throw error;
     }
   },
 
@@ -91,7 +119,8 @@ export const bugAPI = {
    */
   async update(id: string, bug: UpdateBugRequest): Promise<Bug> {
     try {
-      const response = await apiClient.put(`/bugs/${id}`, bug);
+      const encodedId = encodeURIComponent(id);
+      const response = await apiClient.put(`/bugs/${encodedId}`, bug);
       return response.data;
     } catch (error) {
       handleApiError(error);
@@ -104,7 +133,8 @@ export const bugAPI = {
    */
   async delete(id: string): Promise<void> {
     try {
-      await apiClient.delete(`/bugs/${id}`);
+      const encodedId = encodeURIComponent(id);
+      await apiClient.delete(`/bugs/${encodedId}`);
     } catch (error) {
       handleApiError(error);
     }
@@ -112,6 +142,64 @@ export const bugAPI = {
 };
 
 // Attachment-related API calls
+// Comment-related API calls
+export const commentAPI = {
+  /**
+   * Get comments for a specific bug
+   */
+  async getBugComments(bugId: string): Promise<Comment[]> {
+    try {
+      // Ensure the bug ID is properly encoded for the URL
+      const encodedId = encodeURIComponent(bugId);
+      console.log(`Fetching comments for bug ID: ${bugId} (encoded as ${encodedId})`);
+      const response = await apiClient.get(`/bugs/${encodedId}/comments`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching comments for bug ID: ${bugId}`, error);
+      handleApiError(error);
+      return []; // Never reached if handleApiError throws
+    }
+  },
+
+  /**
+   * Create a new comment for a bug
+   */
+  async createComment(bugId: string, comment: CreateCommentRequest): Promise<Comment> {
+    try {
+      const encodedId = encodeURIComponent(bugId);
+      const response = await apiClient.post(`/bugs/${encodedId}/comments`, comment);
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      throw error;
+    }
+  },
+
+  /**
+   * Update an existing comment
+   */
+  async updateComment(commentId: string, comment: UpdateCommentRequest): Promise<Comment> {
+    try {
+      const response = await apiClient.put(`/bugs/comments/${commentId}`, comment);
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      throw error;
+    }
+  },
+
+  /**
+   * Delete a comment
+   */
+  async deleteComment(commentId: string): Promise<void> {
+    try {
+      await apiClient.delete(`/bugs/comments/${commentId}`);
+    } catch (error) {
+      handleApiError(error);
+    }
+  },
+};
+
 export const attachmentAPI = {
   /**
    * Get attachments for a specific bug

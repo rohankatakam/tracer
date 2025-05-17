@@ -116,3 +116,49 @@ class ImageContent(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class CommentBase(BaseModel):
+    """Base Pydantic model for comment data."""
+    author: str
+    text: str
+    is_private: Optional[bool] = False
+    attachment_ids: List[str] = Field(default_factory=list, description="IDs of attachments referenced in this comment")
+
+
+class CommentCreate(CommentBase):
+    """Schema for creating a new comment."""
+    pass
+
+
+class CommentUpdate(BaseModel):
+    """Schema for updating a comment."""
+    text: Optional[str] = None
+    is_private: Optional[bool] = None
+    attachment_ids: Optional[List[str]] = None
+
+
+class Comment(CommentBase):
+    """Complete comment model with all fields."""
+    comment_id: str
+    bug_id: str
+    timestamp: datetime
+    
+    class Config:
+        from_attributes = True
+        json_schema_extra = {"example": {
+            "comment_id": "550e8400-e29b-41d4-a716-446655440000",
+            "bug_id": "550e8400-e29b-41d4-a716-446655440001",
+            "author": "Jane Doe",
+            "text": "This is a comment on the bug.",
+            "timestamp": "2023-01-01T12:00:00",
+            "is_private": False,
+            "attachment_ids": ["550e8400-e29b-41d4-a716-446655440002"]
+        }}
+        
+    @classmethod
+    def from_orm(cls, obj):
+        # Check if there's a to_dict method and use it for custom serialization
+        if hasattr(obj, 'to_dict') and callable(obj.to_dict):
+            return cls(**obj.to_dict())
+        return super().from_orm(obj)

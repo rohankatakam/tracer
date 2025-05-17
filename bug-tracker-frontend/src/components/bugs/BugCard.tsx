@@ -26,7 +26,10 @@ export const BugCard: React.FC<BugCardProps> = ({ bug }) => {
     <div className="bg-white shadow rounded-lg p-4 border-l-4 border-primary hover:shadow-md transition-shadow">
       <div className="flex justify-between items-start">
         <h3 className="text-lg font-medium text-gray-900 mb-1 truncate">
-          <Link href={`/bugs/${bug.bug_id}`} className="hover:text-primary">
+          <Link 
+            href={`/bugs/${encodeURIComponent(bug.bug_id)}`} 
+            className="hover:text-primary"
+          >
             {bug.title}
           </Link>
         </h3>

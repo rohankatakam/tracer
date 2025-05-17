@@ -27,3 +27,4 @@ class Bug(Base):
     
     # Relationships
     attachments = relationship("Attachment", back_populates="bug", cascade="all, delete-orphan")
+    comments = relationship("Comment", back_populates="bug", cascade="all, delete-orphan")
