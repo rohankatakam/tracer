@@ -1,6 +1,6 @@
 # Roadmap for Bug-to-Task-Graph Pipeline Implementation (Friday, May 16th)
 
-Given your time constraints and the desire to make meaningful progress by the end of today, I've structured this roadmap into a series of achievable tasks organized by component, with estimated time frames.
+Given your time constraints and the desire to make meaningful progress, I've structured this roadmap into a series of achievable tasks organized by component, with estimated time frames. **Note**: With the requested additions, completing all tasks will likely extend significantly beyond a single day.
 
 ## 1. Version Control (30-45 min)
 
@@ -37,7 +37,7 @@ Given your time constraints and the desire to make meaningful progress by the en
   - Create `config/database.py` with connection details
   - Update `.env.example` and `.env` with DB credentials
 
-## 3. Database Layer Implementation (2-2.5 hours)
+## 3. Database Layer Implementation (SQLAlchemy) (2-2.5 hours)
 
 - **Install SQLAlchemy**
   ```bash
@@ -62,95 +62,205 @@ Given your time constraints and the desire to make meaningful progress by the en
 - **Refactor Database CRUD Operations**
   - Replace pickle-based approach in `attachment_db.py` with SQLAlchemy ORM
 
-## 4. Attachment Processor Refinement (2 hours)
+## 4. API Layer for Database Interaction (1.5-2 hours)
+
+- **Design and Implement RESTful API Endpoints**
+  - Framework: FastAPI (recommended for modern Python APIs)
+  - Key Endpoints for Bugs:
+    - `POST /bugs` (Create a new bug)
+    - `GET /bugs` (List all bugs)
+    - `GET /bugs/{bug_id}` (Retrieve a specific bug)
+    - `PUT /bugs/{bug_id}` (Update a specific bug)
+    - `DELETE /bugs/{bug_id}` (Delete a specific bug)
+  - Key Endpoints for Attachments:
+    - `POST /bugs/{bug_id}/attachments` (Upload an attachment for a bug)
+    - `GET /attachments/{attachment_id}` (Retrieve a specific attachment's metadata)
+    - `GET /attachments/{attachment_id}/content` (Retrieve processed content if applicable)
+- **Implement Request/Response Models**
+  - Use Pydantic models for data validation and serialization.
+- **Basic Authentication/Authorization** (Optional, if time permits)
+  - Consider a simple API key mechanism.
+
+## 5. Frontend for Bug Creation (2-2.5 hours)
+
+- **Technology Choice**: Simple HTML, CSS, and JavaScript (to avoid Node.js/React setup time for this iteration).
+- **Core Functionality**:
+  - Form to input bug details (based on "Base Model"):
+    - Title (text input)
+    - Description (textarea)
+    - Reporter (text input, optional)
+    - Severity (dropdown: e.g., Low, Medium, High, Critical)
+    - File Upload for attachments (multiple files allowed)
+  - JavaScript to handle form submission via `fetch` to the `POST /bugs` API endpoint.
+  - Basic UI to display success/error messages from the API.
+- **Structure**:
+  - `index.html`: Main page with the form.
+  - `style.css`: Basic styling.
+  - `script.js`: Form handling and API interaction logic.
+
+## 6. External Bug Data Ingestion (2.5-3.5 hours)
+
+- **6.1. Bugzilla API Client (1-1.5 hours)**
+  - Identify target Bugzilla instance (e.g., public Mozilla instance for testing).
+  - Use Python `requests` library to interact with the Bugzilla REST API (e.g., `GET /rest/bug`).
+  - Fetch bug data (ID, summary, description, status, product, component, attachments).
+  - Implement a script/module `core/ingestion/bugzilla_client.py`.
+- **6.2. Chromium Issues Web Crawler (1.5-2 hours)**
+  - **Disclaimer**: Web scraping can be fragile and might violate terms of service. Proceed with caution and respect `robots.txt`.
+  - Target: Chromium issue tracker (e.g., issues.chromium.org).
+  - Libraries: `requests` for fetching HTML, `BeautifulSoup4` for parsing.
+  - Identify key HTML elements containing bug information (title, description, comments, metadata).
+  - Implement a script/module `core/ingestion/chromium_crawler.py`.
+  - Focus on extracting a few key fields initially.
+- **6.3. Data Transformation & Loading (0.5-1 hour)**
+  - Create mapping functions to transform Bugzilla and Chromium data structures into your application's Bug and Attachment schema.
+  - Develop scripts to:
+    - Read data fetched by the client/crawler.
+    - Transform it.
+    - Use the API layer (`POST /bugs` and `POST /bugs/{bug_id}/attachments`) to load the data into PostgreSQL. This ensures data validation and consistent processing.
+
+## 7. Attachment Processor Refinement (2-2.5 hours) (Previously Step 4)
 
 - **Enhance Text Processor**
   - Complete `text_processor.py` implementation
   - Add metadata extraction for text files
   - Update integration with PostgreSQL storage
-
 - **Enhance Image Processor**
   - Complete `image_processor.py` implementation
   - Improve OCR capabilities using Tesseract or similar
   - Add metadata extraction (dimensions, format)
   - Update integration with PostgreSQL storage
-
 - **Enhance PDF Processor**
   - Complete `pdf_processor.py` implementation
   - Add text extraction for text-based PDFs
   - Implement basic OCR for image-based content
   - Extract basic metadata (pages, title, author)
   - Update integration with PostgreSQL storage
-
 - **Update Main Attachment Processor**
   - Update `attachment_processor.py` to use enhanced processors
   - Improve handling of processing results
   - Ensure proper database integration
 
-## 5. Basic Multimodal Reasoning Chain (2-3 hours)
+## 8. LLM Multimodal Reasoning Chain (2-3 hours) (Previously Step 5)
 
 - **Enhance Task Graph Generator**
-  - Modify `working_task_graph_generator.py` to pull data from PostgreSQL
-  - Update user prompt creation to include processed attachment data
-  - Improve JSON structure alignment with target schema
-
+  - Modify `working_task_graph_generator.py` to pull all necessary bug data (title, description, processed attachment content) from PostgreSQL via the bug_id.
+  - Update user prompt creation to effectively incorporate multimodal information.
+  - Improve JSON structure alignment with target schema.
 - **Implement Basic Context Management**
-  - Add methods to retrieve relevant attachments from database
-  - Create simple priority system for including attachment data
-  - Implement token counting to manage context size
-
+  - Add methods to retrieve relevant attachments and their processed content from the database.
+  - Create a simple priority system or summarization strategy for including attachment data if it's too large for the LLM context window.
+  - Implement token counting to manage context size.
 - **Improve Response Handling**
-  - Enhance JSON extraction and validation
-  - Add basic error recovery mechanisms
+  - Enhance JSON extraction and validation from LLM output.
+  - Add basic error recovery mechanisms or retry logic for LLM calls.
 
-## 6. Integration Testing (1.5-2 hours)
+## 9. Integration Testing & Task Graph API (2-3 hours) (Previously Step 6, expanded)
 
-- **Create Test Bug Instances**
-  - Prepare sample bugs with text, image, and PDF attachments
-  
-- **Build Integration Script**
-  - Create `scripts/run_enhanced_pipeline.py` to test the full flow:
-    1. Process attachments
-    2. Store in PostgreSQL
-    3. Generate task graph
-    4. Export result to JSON
+- **9.1. Task Graph Generation API Endpoint (1-1.5 hours)**
+  - Create an API endpoint (e.g., `POST /bugs/{bug_id}/generate_taskgraph` or `POST /taskgraphs` with `bug_id` in body) using FastAPI.
+  - This endpoint will:
+    1. Accept a `bug_id`.
+    2. Retrieve the full bug data (including description and references to processed attachment content) from PostgreSQL using the database layer or API layer.
+    3. Invoke the `TaskGraphGenerator` with this data.
+    4. Return the generated task graph (JSON response).
+- **9.2. End-to-End Testing (1-1.5 hours)**
+  - **Test Case 1: Bug Creation & Task Graph Generation via API**
+    - Use the frontend to create a new bug with various attachments.
+    - Verify it's stored in PostgreSQL.
+    - Call the new Task Graph Generation API endpoint with the new `bug_id`.
+    - Validate the generated task graph.
+  - **Test Case 2: Imported Bug Data & Task Graph Generation**
+    - Ingest sample data from Bugzilla or Chromium.
+    - Verify storage in PostgreSQL.
+    - Call the Task Graph Generation API for an imported bug.
+    - Validate the output.
+  - **Test Script**: Update `scripts/run_enhanced_pipeline.py` or create a new script to automate these API-driven tests.
 
-- **Test and Debug**
-  - Execute with sample data
-  - Verify database entries
-  - Examine generated task graphs
+## 10. Computer Use Agent (CUA) Integration & Execution (3-4 hours)
 
-## 7. Documentation Updates (30-45 min)
+- **10.1. CUA Networking API Layer Design:**
+  - Define API endpoints for the CUA to receive individual task nodes for execution (e.g., `POST /cua/execute_task`).
+  - Specify the data format for task nodes (e.g., task description, type, parameters) and CUA responses (e.g., status, results, errors, screenshots/artifacts if applicable).
+  - Consider security aspects: how will the main application authenticate with the CUA API?
+- **10.2. Implement CUA Task Receiver:**
+  - Modify your existing Anthropic Computer Use Agent to expose these API endpoints.
+    - This might involve adding a lightweight web server (e.g., Flask or FastAPI) to the CUA's Python environment.
+  - Ensure the CUA can receive a task node, trigger its internal execution logic (as per `TaskGraphExecutor`), and return the result.
+  - Refer to CUA container management scripts (e.g., `reset_cua_container.sh`) if it's containerized.
+- **10.3. Task Graph Executor Service (Main Application Side):**
+  - Create a new service or module within your main application (e.g., `core/execution/cua_executor_service.py`).
+  - This service will:
+    1. Accept a complete task graph (likely in JSON format, as generated by Step 9.1).
+    2. Parse the task graph to understand nodes and their dependencies.
+    3. Iterate through task nodes in the correct order.
+    4. For each executable task node, construct and send an API request to the CUA's `/cua/execute_task` endpoint.
+    5. Receive and process the CUA's response (success, failure, output data).
+    6. Manage the overall state of the task graph execution (e.g., which tasks are done, pending, failed).
+    7. Handle errors and potential retries for CUA tasks.
+- **10.4. End-to-End CUA Integration Testing:**
+  - Update the integration testing phase (or create new tests) to cover the full loop:
+    1. Create/Ingest a bug.
+    2. Generate its task graph via the API (Step 9.1).
+    3. Pass this task graph to the new Task Graph Executor Service.
+    4. Verify that the CUA receives tasks, executes them (can be mocked or observed), and results are correctly reported back.
+  - This could involve extending `scripts/run_enhanced_pipeline.py` or creating a new script like `scripts/run_full_cua_pipeline.py`.
+
+## 11. Documentation Updates (1.5-2 hours) (Previously Step 10, expanded)
 
 - **Update README.md**
-  - Document new PostgreSQL requirement
-  - Add setup instructions
-
+  - Document new PostgreSQL requirement, API layer, frontend, data ingestion modules, task graph API, and CUA integration.
+  - Add setup and usage instructions for all new components, including CUA API interaction.
+  - Detail environment variables needed for Bugzilla API, CUA API endpoint, etc.
 - **Update Code Documentation**
-  - Ensure all new methods have docstrings
-  - Add comments for complex logic
+  - Ensure all new methods, classes, and API endpoints (including CUA-related ones) have docstrings.
+  - Add comments for complex logic in crawlers, data transformers, CUA executor service, etc.
+- **API Documentation** (if using FastAPI, Swagger/OpenAPI docs are auto-generated)
+  - Review and enhance auto-generated API documentation for all services.
 
 ## Timeline (Estimated)
 
-| Time | Task |
-|------|------|
-| 3:30 PM - 4:15 PM | Version Control |
-| 4:15 PM - 5:45 PM | PostgreSQL Setup & DB Layer Implementation |
-| 5:45 PM - 6:30 PM | Dinner Break |
-| 6:30 PM - 8:30 PM | Attachment Processor Refinement |
-| 8:30 PM - 11:00 PM | Basic Multimodal Reasoning Chain & Integration Testing |
-| 11:00 PM - 11:30 PM | Documentation Updates |
+**Note**: The estimated times are aggressive and assume focused work. Completing all these tasks thoroughly will likely span multiple days.
 
-## Priority Order (If Time Becomes Limited)
+| Time Block        | Task                                               | Estimated Hours | Cumulative Hours |
+|-------------------|----------------------------------------------------|-----------------|------------------|
+| Day 1 Afternoon   | 1. Version Control                                 | 0.75            | 0.75             |
+|                   | 2. PostgreSQL Setup                              | 1.5             | 2.25             |
+| Day 1 Evening     | 3. Database Layer Implementation (SQLAlchemy)      | 2.5             | 4.75             |
+|                   | Break                                              | 0.5             | 5.25             |
+|                   | 4. API Layer for Database Interaction              | 2               | 7.25             |
+| Day 2 Morning     | 5. Frontend for Bug Creation                       | 2.5             | 9.75             |
+|                   | 6.1. Bugzilla API Client                           | 1.5             | 11.25            |
+| Day 2 Afternoon   | 6.2. Chromium Issues Web Crawler                 | 2               | 13.25            |
+|                   | 6.3. Data Transformation & Loading                 | 1               | 14.25            |
+|                   | Break                                              | 0.5             | 14.75            |
+| Day 2 Evening     | 7. Attachment Processor Refinement                 | 2.5             | 17.25            |
+| Day 3 Morning     | 8. LLM Multimodal Reasoning Chain                  | 3               | 20.25            |
+| Day 3 Afternoon   | 9. Integration Testing & Task Graph API            | 3               | 23.25            |
+| Day 3 Evening     | 10. Computer Use Agent (CUA) Integration & Execution | 3.5             | 26.75            |
+| Day 4 Morning     | 11. Documentation Updates                          | 1.5             | 28.25            |
 
-1. Version Control (essential)
-2. PostgreSQL Setup (essential)
-3. Database Layer Implementation (essential)
-4. Text Processor Enhancement (high priority)
-5. Image Processor Enhancement (medium priority)
-6. PDF Processor Enhancement (medium priority)
-7. Basic Multimodal Reasoning Chain (high priority)
-8. Integration Testing (essential)
-9. Documentation Updates (if time permits)
+**Total Estimated Hours: ~28.5 hours**
 
-This roadmap should be achievable with focused work into the evening, and delivers the core functionality you're targeting while leaving video processing for future development.
+## Priority Order (If Time Becomes Limited - Staged Approach)
+
+**Stage 1: Core End-to-End Pipeline (Focus for initial push)**
+1.  Version Control (Done)
+2.  PostgreSQL Setup (Essential)
+3.  Database Layer Implementation (SQLAlchemy) (Essential)
+4.  API Layer for Database Interaction (Essential for decoupling)
+5.  Attachment Processor Refinement (Text, Image, PDF - core to multimodal)
+6.  LLM Multimodal Reasoning Chain (Core to generating task graphs)
+7.  Integration Testing & Task Graph API (Essential for verifying task graph generation)
+8.  Computer Use Agent (CUA) Integration & Execution (Essential for executing tasks)
+
+**Stage 2: User Input & Basic External Ingestion**
+9.  Frontend for Bug Creation (Allows user input)
+10. External Bug Data Ingestion (Bugzilla Client - choose one to start)
+11. Documentation Updates (For completed stages)
+
+**Stage 3: Advanced Ingestion & Polish**
+12. External Bug Data Ingestion (Chromium Crawler - more complex)
+13. Further Documentation & Refinements
+
+This expanded roadmap provides a more detailed and realistic plan for the comprehensive Bug-to-Task-Graph pipeline you envision.
