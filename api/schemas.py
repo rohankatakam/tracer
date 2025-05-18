@@ -266,7 +266,7 @@ class PDFPage(BaseModel):
 class PDFContent(BaseModel):
     """Schema for PDF content extracted from attachments."""
     content_id: str
-    page_count: int
+    num_pages: int
     has_text: bool = False
     pages: List[PDFPage] = []
     
@@ -346,6 +346,33 @@ class AttachmentProcessingUpdate(BaseModel):
     processing_status: Optional[AttachmentProcessingStatus] = None
     content_id: Optional[str] = None
     processing_error: Optional[str] = None
+
+
+class ProcessingResult(BaseModel):
+    """Schema for attachment processing results."""
+    status: str
+    message: Optional[str] = None
+    attachment_id: str
+    results: Optional[Dict[str, Any]] = None
+    
+    model_config = {
+        "json_schema_extra": {
+            "examples": [
+                {
+                    "status": "success",
+                    "message": "Processing completed successfully",
+                    "attachment_id": "550e8400-e29b-41d4-a716-446655440000",
+                    "results": {
+                        "text_content_id": "123e4567-e89b-12d3-a456-426614174000",
+                        "metadata": {
+                            "word_count": 150,
+                            "language": "en"
+                        }
+                    }
+                }
+            ]
+        }
+    }
 
 
 class Bug(BaseModel):

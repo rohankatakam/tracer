@@ -46,6 +46,11 @@ class TextContent(BaseModel):
     encoding: Optional[str] = Field(None, description="Text encoding")
     extraction_method: str = Field("direct", description="Method used to extract the text (direct, ocr, etc.)")
     processing_timestamp: datetime = Field(default_factory=datetime.now, description="When the text was processed")
+    source_attachment_id: Optional[str] = Field(None, description="ID of the attachment this text was extracted from")
+    source_pdf_id: Optional[str] = Field(None, description="ID of the PDF this text was extracted from, if applicable")
+    source_pdf_page: Optional[int] = Field(None, description="Page number in PDF this text was extracted from, if applicable")
+    source_image_id: Optional[str] = Field(None, description="ID of the image this text was extracted from via OCR, if applicable")
+    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata about the text content")
     
     class Config:
         schema_extra = {
@@ -91,6 +96,9 @@ class ImageContent(BaseModel):
     ocr_text_id: Optional[str] = Field(None, description="Reference to OCR text extracted from this image")
     ocr_confidence: Optional[float] = Field(None, ge=0.0, le=1.0, description="Confidence score of OCR (0.0 to 1.0)")
     processing_timestamp: datetime = Field(default_factory=datetime.now, description="When the image was processed")
+    source_attachment_id: Optional[str] = Field(None, description="ID of the attachment this image came from")
+    source_pdf_id: Optional[str] = Field(None, description="ID of the PDF this image was extracted from, if applicable")
+    source_pdf_page: Optional[int] = Field(None, description="Page number in PDF this image was extracted from, if applicable")
     
     class Config:
         schema_extra = {
@@ -138,13 +146,17 @@ class PDFContent(BaseModel):
     pdf_id: str = Field(default_factory=lambda: str(uuid.uuid4()), description="Unique identifier for the PDF content")
     file_path: Optional[str] = Field(None, description="Path to the stored PDF file")
     storage_location: Optional[str] = Field(None, description="Storage location identifier (DB, file system, etc.)")
-    title: Optional[str] = Field(None, description="Title of the PDF")
+    num_pages: int = Field(0, description="Number of pages in the PDF")
     author: Optional[str] = Field(None, description="Author of the PDF")
-    creation_date: Optional[datetime] = Field(None, description="Creation date of the PDF")
-    modification_date: Optional[datetime] = Field(None, description="Last modification date of the PDF")
-    num_pages: int = Field(..., description="Number of pages in the PDF")
-    pages: List[PDFPageContent] = Field(default_factory=list, description="Content of each page in the PDF")
+    title: Optional[str] = Field(None, description="Title of the PDF")
+    creation_date: Optional[str] = Field(None, description="Creation date of the PDF")
+    modification_date: Optional[str] = Field(None, description="Last modification date of the PDF")
+    text_content_ids: List[str] = Field(default_factory=list, description="References to text extracted from this PDF")
+    image_content_ids: List[str] = Field(default_factory=list, description="References to images extracted from this PDF")
+    pages: List["PDFPageContent"] = Field(default_factory=list, description="Contents of each page in the PDF")
     processing_timestamp: datetime = Field(default_factory=datetime.now, description="When the PDF was processed")
+    source_attachment_id: Optional[str] = Field(None, description="ID of the attachment this PDF came from")
+    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata about the PDF content")
     
     class Config:
         schema_extra = {

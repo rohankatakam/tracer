@@ -264,7 +264,7 @@ class ImageContentRepository(BaseRepository[ImageContent]):
         image_content = ImageContent(
             file_path=file_path,
             storage_location=storage_location,
-            meta_data=metadata,
+            metadata=metadata,
             ocr_text_id=ocr_text_id,
             ocr_confidence=ocr_confidence,
             processing_timestamp=datetime.now()
