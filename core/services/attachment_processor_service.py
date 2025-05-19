@@ -159,7 +159,7 @@ class AttachmentProcessorService:
         }
         
         return {
-            "text_content_id": str(db_text_content.id),
+            "text_content_id": str(db_text_content.text_id),
             "metadata": metadata,
             "processor": "text"
         }
@@ -189,7 +189,7 @@ class AttachmentProcessorService:
                 encoding=ocr_text.encoding,
                 extraction_method=ocr_text.extraction_method
             )
-            text_content_id = str(db_text_content.id)
+            text_content_id = str(db_text_content.text_id)
         
         # Store image content in the database
         metadata = {
@@ -210,7 +210,7 @@ class AttachmentProcessorService:
         )
         
         return {
-            "image_content_id": str(db_image_content.id),
+            "image_content_id": str(db_image_content.image_id),
             "ocr_text_id": text_content_id,
             "ocr_confidence": image_content.ocr_confidence if image_content.ocr_confidence else None,
             "metadata": metadata,
