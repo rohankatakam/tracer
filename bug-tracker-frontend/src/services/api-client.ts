@@ -287,4 +287,36 @@ export const attachmentAPI = {
       throw error;
     }
   },
+
+  /**
+   * Get processed content for an attachment
+   */
+  getProcessedContent: async (attachmentId: string): Promise<any> => {
+    try {
+      const response = await apiClient.get(`/attachments/${attachmentId}/processed`);
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      throw error;
+    }
+  },
+
+  /**
+   * Trigger processing for an attachment
+   * @param attachmentId The ID of the attachment to process
+   * @param processAsync Whether to process asynchronously (default: true)
+   */
+  processAttachment: async (attachmentId: string, processAsync: boolean = true): Promise<any> => {
+    try {
+      const response = await apiClient.post(
+        `/attachments/${attachmentId}/process`, 
+        {}, 
+        { params: { process_async: processAsync } }
+      );
+      return response.data;
+    } catch (error) {
+      handleApiError(error);
+      throw error;
+    }
+  },
 };

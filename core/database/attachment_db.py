@@ -138,7 +138,7 @@ def get_attachments_by_bug_id(bug_id: str) -> List[BugAttachment]:
 
 
 # Text content functions
-def store_text_content(text_content: TextContent) -> bool:
+def store_text_content(text_content: TextContent) -> str:
     """
     Store text content in the database.
     
@@ -146,17 +146,17 @@ def store_text_content(text_content: TextContent) -> bool:
         text_content: The text content to store
         
     Returns:
-        True if successful, False otherwise
+        The text_id if successful, empty string otherwise
     """
     try:
         _initialize_db()
         text_contents = _load_db(TEXT_DB_PATH)
         text_contents[text_content.text_id] = text_content
         _save_db(TEXT_DB_PATH, text_contents)
-        return True
+        return text_content.text_id
     except Exception as e:
         logger.error(f"Error storing text content: {str(e)}")
-        return False
+        return ""
 
 
 def get_text_content(text_id: str) -> Optional[TextContent]:
@@ -178,7 +178,7 @@ def get_text_content(text_id: str) -> Optional[TextContent]:
 
 
 # Image content functions
-def store_image_content(image_content: ImageContent) -> bool:
+def store_image_content(image_content: ImageContent) -> str:
     """
     Store image content in the database.
     
@@ -186,17 +186,17 @@ def store_image_content(image_content: ImageContent) -> bool:
         image_content: The image content to store
         
     Returns:
-        True if successful, False otherwise
+        The image_id if successful, empty string otherwise
     """
     try:
         _initialize_db()
         image_contents = _load_db(IMAGE_DB_PATH)
         image_contents[image_content.image_id] = image_content
         _save_db(IMAGE_DB_PATH, image_contents)
-        return True
+        return image_content.image_id
     except Exception as e:
         logger.error(f"Error storing image content: {str(e)}")
-        return False
+        return ""
 
 
 def get_image_content(image_id: str) -> Optional[ImageContent]:
@@ -218,7 +218,7 @@ def get_image_content(image_id: str) -> Optional[ImageContent]:
 
 
 # PDF content functions
-def store_pdf_content(pdf_content: PDFContent) -> bool:
+def store_pdf_content(pdf_content: PDFContent) -> str:
     """
     Store PDF content in the database.
     
@@ -226,17 +226,17 @@ def store_pdf_content(pdf_content: PDFContent) -> bool:
         pdf_content: The PDF content to store
         
     Returns:
-        True if successful, False otherwise
+        The pdf_id if successful, empty string otherwise
     """
     try:
         _initialize_db()
         pdf_contents = _load_db(PDF_DB_PATH)
         pdf_contents[pdf_content.pdf_id] = pdf_content
         _save_db(PDF_DB_PATH, pdf_contents)
-        return True
+        return pdf_content.pdf_id
     except Exception as e:
         logger.error(f"Error storing PDF content: {str(e)}")
-        return False
+        return ""
 
 
 def get_pdf_content(pdf_id: str) -> Optional[PDFContent]:
@@ -258,7 +258,7 @@ def get_pdf_content(pdf_id: str) -> Optional[PDFContent]:
 
 
 # Video content functions
-def store_video_content(video_content: VideoContent) -> bool:
+def store_video_content(video_content: VideoContent) -> str:
     """
     Store video content in the database.
     
@@ -266,17 +266,17 @@ def store_video_content(video_content: VideoContent) -> bool:
         video_content: The video content to store
         
     Returns:
-        True if successful, False otherwise
+        The video_id if successful, empty string otherwise
     """
     try:
         _initialize_db()
         video_contents = _load_db(VIDEO_DB_PATH)
         video_contents[video_content.video_id] = video_content
         _save_db(VIDEO_DB_PATH, video_contents)
-        return True
+        return video_content.video_id
     except Exception as e:
         logger.error(f"Error storing video content: {str(e)}")
-        return False
+        return ""
 
 
 def get_video_content(video_id: str) -> Optional[VideoContent]:

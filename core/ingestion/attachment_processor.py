@@ -34,8 +34,8 @@ from core.models.attachment_schema import (
 # Import the specific processors
 from core.ingestion.text_processor import process_text_file
 from core.ingestion.image_processor import process_image_file
-# Stub imports for future implementation
-# from core.ingestion.pdf_processor import process_pdf_file
+from core.ingestion.pdf_processor import process_pdf_file
+# Stub import for future implementation
 # from core.ingestion.video_processor import process_video_file
 
 # Import database connectors
@@ -145,19 +145,43 @@ class AttachmentProcessor:
         """
         self.logger.info(f"Processing text attachment: {attachment.filename}")
         
-        # Process the text file
-        text_content = process_text_file(
-            file_path=attachment.file_path,
-            output_dir=str(self.text_dir)
-        )
-        
-        # Store the text content
-        store_text_content(text_content)
-        
-        # Update attachment with reference to text content
-        attachment.content.text_content_ids.append(text_content.text_id)
-        
-        self.logger.info(f"Text attachment processed, ID: {text_content.text_id}")
+        try:
+            # Process the text file with enhanced processor
+            text_content = process_text_file(
+                file_path=attachment.file_path,
+                output_dir=str(self.text_dir),
+                store_in_db=True,  # Directly store in DB during processing
+                attachment_id=attachment.attachment_id  # Pass attachment ID for source tracking
+            )
+            
+            # Update attachment with reference
+            if not attachment.content:
+                attachment.content = AttachmentContent()
+            
+            attachment.content.text_content_ids = [text_content.text_id]
+            
+            # Store metadata in attachment
+            if not attachment.metadata:
+                attachment.metadata = {}
+                
+            # Add key metadata to the attachment level
+            if hasattr(text_content, 'metadata'):
+                attachment.metadata.update({
+                    'word_count': text_content.metadata.get('word_count'),
+                    'line_count': text_content.metadata.get('line_count'),
+                    'character_count': text_content.metadata.get('character_count'),
+                    'encoding': text_content.encoding,
+                    'language': text_content.language
+                })
+            
+            attachment.processing_status = AttachmentProcessingStatus.COMPLETED
+            
+            self.logger.info(f"Text attachment processing complete for {attachment.filename}")
+            
+        except Exception as e:
+            self.logger.error(f"Error processing text attachment: {str(e)}")
+            attachment.processing_status = AttachmentProcessingStatus.FAILED
+            attachment.processing_error = str(e)
     
     def _process_image_attachment(self, attachment: BugAttachment) -> None:
         """
@@ -168,24 +192,51 @@ class AttachmentProcessor:
         """
         self.logger.info(f"Processing image attachment: {attachment.filename}")
         
-        # Process the image file
-        image_content, ocr_text = process_image_file(
-            file_path=attachment.file_path,
-            output_dir=str(self.image_dir)
-        )
-        
-        # Store the image content
-        store_image_content(image_content)
-        
-        # If OCR text was extracted, store it too
-        if ocr_text:
-            store_text_content(ocr_text)
-            attachment.content.text_content_ids.append(ocr_text.text_id)
-        
-        # Update attachment with reference to image content
-        attachment.content.image_content_ids.append(image_content.image_id)
-        
-        self.logger.info(f"Image attachment processed, ID: {image_content.image_id}")
+        try:
+            # Process the image file with enhanced processor
+            image_content, ocr_text = process_image_file(
+                file_path=attachment.file_path,
+                output_dir=str(self.image_dir),
+                perform_ocr_flag=True,
+                store_in_db=True,  # Directly store in DB during processing
+                attachment_id=attachment.attachment_id  # Pass attachment ID for source tracking
+            )
+            
+            # Update attachment with references
+            if not attachment.content:
+                attachment.content = AttachmentContent()
+            
+            attachment.content.image_content_ids = [image_content.image_id]
+            
+            if ocr_text:
+                if not attachment.content.text_content_ids:
+                    attachment.content.text_content_ids = []
+                attachment.content.text_content_ids.append(ocr_text.text_id)
+            
+            # Store metadata in attachment
+            if not attachment.metadata:
+                attachment.metadata = {}
+            
+            # Add key metadata to the attachment level
+            if hasattr(image_content, 'metadata'):
+                meta = image_content.metadata
+                attachment.metadata.update({
+                    'width': meta.width,
+                    'height': meta.height,
+                    'format': meta.format,
+                    'color_mode': meta.color_mode,
+                    'has_ocr_text': ocr_text is not None,
+                    'ocr_confidence': image_content.ocr_confidence
+                })
+                
+            attachment.processing_status = AttachmentProcessingStatus.COMPLETED
+            
+            self.logger.info(f"Image attachment processing complete for {attachment.filename}")
+            
+        except Exception as e:
+            self.logger.error(f"Error processing image attachment: {str(e)}")
+            attachment.processing_status = AttachmentProcessingStatus.FAILED
+            attachment.processing_error = str(e)
     
     def _process_pdf_attachment(self, attachment: BugAttachment) -> None:
         """
@@ -194,18 +245,52 @@ class AttachmentProcessor:
         Args:
             attachment: The PDF file attachment to process
         """
-        self.logger.info(f"PDF processing is not fully implemented yet, skipping: {attachment.filename}")
+        self.logger.info(f"Processing PDF attachment: {attachment.filename}")
         
-        # This is a stub for future implementation
-        # The actual implementation would:
-        # 1. Extract text from PDF
-        # 2. Extract images from PDF
-        # 3. Store all extracted content
-        # 4. Update attachment with references
-        
-        # For now, mark as skipped
-        attachment.processing_status = AttachmentProcessingStatus.SKIPPED
-        attachment.processing_error = "PDF processing not implemented yet"
+        try:
+            # Process the PDF file with the enhanced processor
+            pdf_result = process_pdf_file(
+                pdf_path=attachment.file_path,
+                output_dir=str(self.pdf_dir),
+                store_in_db=True,  # Directly store in DB during processing
+                attachment_id=attachment.attachment_id  # Pass attachment ID for source tracking
+            )
+            
+            # Update attachment with references
+            if not attachment.content:
+                attachment.content = AttachmentContent()
+            
+            # Store PDF content ID
+            pdf_content = pdf_result.get('pdf_content')
+            attachment.content.pdf_content_id = pdf_content.pdf_id
+            
+            # Store text and image content IDs
+            attachment.content.text_content_ids = pdf_result.get('text_ids', [])
+            attachment.content.image_content_ids = pdf_result.get('image_ids', [])
+            
+            # Store metadata in attachment
+            if not attachment.metadata:
+                attachment.metadata = {}
+            
+            # Add key metadata to the attachment level
+            attachment.metadata.update({
+                'page_count': pdf_content.num_pages,
+                'author': pdf_content.author,
+                'title': pdf_content.title,
+                'creation_date': pdf_content.creation_date,
+                'modification_date': pdf_content.modification_date,
+                'text_count': len(pdf_result.get('text_ids', [])),
+                'image_count': len(pdf_result.get('image_ids', []))
+            })
+            
+            attachment.processing_status = AttachmentProcessingStatus.COMPLETED
+            
+            self.logger.info(f"PDF attachment processing complete for {attachment.filename}")
+            
+        except Exception as e:
+            self.logger.error(f"Error processing PDF attachment: {str(e)}")
+            attachment.processing_status = AttachmentProcessingStatus.FAILED
+            attachment.processing_error = str(e)
     
     def _process_video_attachment(self, attachment: BugAttachment) -> None:
         """

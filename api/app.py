@@ -36,13 +36,15 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-# Configure CORS
+# Configure CORS - must be before any routers are included
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, replace with specific origins
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],  # Frontend URLs
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allow_headers=["Content-Type", "Authorization", "Accept", "Origin", "X-Requested-With"],
+    expose_headers=["Content-Length", "Access-Control-Allow-Origin"],
+    max_age=600  # Cache preflight requests for 10 minutes
 )
 
 # Include routers
@@ -77,4 +79,4 @@ async def health_check():
     }
 
 if __name__ == "__main__":
-    uvicorn.run("api.app:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("api.app:app", host="0.0.0.0", port=8080, reload=True)

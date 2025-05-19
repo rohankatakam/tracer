@@ -5,7 +5,11 @@ This module provides functionality to extract raw content from PDF bug reports,
 including text and images. It extracts all available content without attempting
 to interpret it, storing the raw text and images for further processing.
 
-This is part of Phase 1.3A: PDF Bug Report Data Extraction.
+Enhancements in Step 6:
+1. Comprehensive text extraction from text-based PDFs
+2. Functional OCR for image-based content within PDFs
+3. Robust metadata extraction (page count, title, author, creation date, etc.)
+4. PostgreSQL database integration for all extracted data and metadata
 """
 
 import os
@@ -18,6 +22,7 @@ import logging
 import datetime
 from pathlib import Path
 from typing import Dict, List, Tuple, Any, Optional, Union
+from datetime import datetime
 
 import fitz  # PyMuPDF
 import cv2
@@ -27,6 +32,11 @@ import pytesseract
 
 from core.utils.logging_utils import setup_logging
 from core.utils.json_utils import save_json, load_json
+
+# Import the attachment schema and database connector
+from core.models.attachment_schema import TextContent, ImageContent, PDFContent, PDFPageContent
+from core.database.attachment_db import store_text_content, store_image_content, store_pdf_content
+from core.ingestion.image_processor import process_image_file
 
 
 class PDFProcessor:
@@ -76,7 +86,7 @@ class PDFProcessor:
             raise FileNotFoundError(err_msg)
         
         # Create a timestamp-based directory for this PDF
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         pdf_name = os.path.basename(pdf_path)
         pdf_dir = self.output_dir / f"pdf_{timestamp}_{pdf_name}"
         pdf_dir.mkdir(parents=True, exist_ok=True)
@@ -352,12 +362,183 @@ class PDFProcessor:
         return raw_data_package
 
 
-def process_bug_report(pdf_path: str, output_dir: Optional[str] = None) -> Dict[str, Any]:
-    """Process a PDF bug report and extract raw text and images.
+def process_pdf_file(pdf_path: str, output_dir: Optional[str] = None, 
+                   store_in_db: bool = True,
+                   attachment_id: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Process a PDF file attachment, extracting text, images, and metadata.
     
+    This function is the main entry point for PDF processing in the attachment
+    processing pipeline. It extracts all content and stores it in the database.
+    
+    Args:
+        pdf_path: Path to the PDF file
+        output_dir: Optional directory to save extracted artifacts
+        store_in_db: Whether to store the PDF content in the database
+        
+    Returns:
+        Dictionary containing PDFContent object and references to extracted content
+    """
+    logger = logging.getLogger("pdf_processor")
+    logger.info(f"Processing PDF file: {pdf_path}")
+    
+    # Initialize processor and process PDF
+    processor = PDFProcessor(output_dir=output_dir)
+    pdf_result = processor.process_pdf(pdf_path)
+    
+    # Generate a PDF ID
+    pdf_id = str(uuid.uuid4())
+    
+    # Create storage location
+    storage_location = "file_system" if output_dir else None
+    
+    # Create page content objects
+    pages = []
+    text_ids = []
+    image_ids = []
+    
+    for i, page_data in enumerate(pdf_result.get("pages", [])):
+        # Get or create text content for this page
+        page_text_id = None
+        if page_data.get("text"):
+            text_content = TextContent(
+                text_id=str(uuid.uuid4()),
+                content=page_data["text"],
+                language=None,  # Could add language detection here
+                extraction_method="pdf_extraction",
+                processing_timestamp=datetime.now(),
+                metadata={
+                    "page_number": i,
+                    "pdf_path": pdf_path,
+                    "extraction_method": "pymupdf"
+                }
+            )
+            
+            # Store text content in database if requested
+            if store_in_db:
+                try:
+                    page_text_id = store_text_content(text_content)
+                    text_ids.append(page_text_id)
+                    logger.info(f"Stored text content for page {i} with ID: {page_text_id}")
+                except Exception as e:
+                    logger.error(f"Failed to store text content for page {i}: {str(e)}")
+                    page_text_id = text_content.text_id
+            else:
+                page_text_id = text_content.text_id
+        
+        # Handle images on this page
+        page_image_ids = []
+        for img_data in page_data.get("images", []):
+            image_path = img_data.get("path")
+            if image_path and os.path.exists(image_path):
+                try:
+                    # Process the extracted image using our enhanced image processor
+                    image_content, ocr_text = process_image_file(
+                        file_path=image_path,
+                        output_dir=output_dir,  # Use the same output directory
+                        perform_ocr_flag=True,
+                        store_in_db=False,  # We'll handle DB storage here
+                        attachment_id=attachment_id  # Pass through the attachment ID
+                    )
+                    
+                    # Add PDF source metadata
+                    if hasattr(image_content.metadata, '__dict__'):
+                        image_content.metadata.__dict__['source_pdf_id'] = pdf_id
+                        image_content.metadata.__dict__['source_pdf_page'] = i
+                        image_content.metadata.__dict__['pdf_path'] = pdf_path
+                    
+                    # If OCR text was extracted, store it separately
+                    if ocr_text:
+                        ocr_text.source_pdf_id = pdf_id
+                        ocr_text.source_pdf_page = i
+                        ocr_text.source_attachment_id = attachment_id
+                        
+                        # Also add to metadata for backward compatibility
+                        if hasattr(ocr_text, 'metadata') and isinstance(ocr_text.metadata, dict):
+                            ocr_text.metadata['source_pdf_id'] = pdf_id
+                            ocr_text.metadata['source_pdf_page'] = i
+                            ocr_text.metadata['extraction_source'] = 'pdf_image'
+                        
+                        if store_in_db:
+                            try:
+                                ocr_text_id = store_text_content(ocr_text)
+                                text_ids.append(ocr_text_id)
+                                logger.info(f"Stored OCR text from PDF image on page {i} with ID: {ocr_text_id}")
+                                image_content.ocr_text_id = ocr_text_id
+                            except Exception as e:
+                                logger.error(f"Failed to store OCR text from PDF image: {str(e)}")
+                    
+                    # Store image content in database if requested
+                    if store_in_db:
+                        try:
+                            image_id = store_image_content(image_content)
+                            page_image_ids.append(image_id)
+                            image_ids.append(image_id)
+                            logger.info(f"Stored enhanced image content from page {i} with ID: {image_id}")
+                        except Exception as e:
+                            logger.error(f"Failed to store image content from page {i}: {str(e)}")
+                            page_image_ids.append(image_content.image_id)
+                    else:
+                        page_image_ids.append(image_content.image_id)
+                        
+                except Exception as e:
+                    logger.error(f"Error processing image from PDF: {str(e)}")
+        
+        # Create page content object
+        page_content = PDFPageContent(
+            page_number=i,
+            text_id=page_text_id,
+            image_ids=page_image_ids,
+            has_text=bool(page_text_id),
+            has_images=len(page_image_ids) > 0
+        )
+        
+        pages.append(page_content)
+    
+    # Extract metadata from PDF result
+    metadata = pdf_result.get("metadata", {})
+    
+    # Create PDF content object
+    pdf_content = PDFContent(
+        pdf_id=pdf_id,
+        file_path=pdf_path,
+        storage_location=storage_location,
+        num_pages=len(pages),
+        author=metadata.get("author"),
+        title=metadata.get("title"),
+        creation_date=metadata.get("creationDate"),
+        modification_date=metadata.get("modDate"),
+        text_content_ids=text_ids,
+        image_content_ids=image_ids,
+        pages=pages,
+        processing_timestamp=datetime.now(),
+        source_attachment_id=attachment_id,
+        metadata={k: v for k, v in metadata.items() if k not in ["author", "title", "creationDate", "modDate"]}
+    )
+    
+    # Store PDF content in database if requested
+    if store_in_db:
+        try:
+            stored_pdf_id = store_pdf_content(pdf_content)
+            logger.info(f"Stored PDF content in database with ID: {stored_pdf_id}")
+        except Exception as e:
+            logger.error(f"Failed to store PDF content in database: {str(e)}")
+    
+    logger.info(f"PDF processing complete, ID: {pdf_id}")
+    return {
+        "pdf_content": pdf_content,
+        "text_ids": text_ids,
+        "image_ids": image_ids
+    }
+
+
+def process_bug_report(pdf_path: str, output_dir: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Process a PDF bug report and extract raw text and images.
+
     This function is the main entry point for PDF processing and focuses on 
     extracting all raw content without interpretation.
-    
+
     Args:
         pdf_path: Path to the PDF bug report
         output_dir: Optional directory to save extracted artifacts

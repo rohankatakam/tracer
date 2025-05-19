@@ -133,9 +133,15 @@ dmypy.json
 .DS_Store
 
 # Project specific
-# Temporarily commenting out data exclusion to allow viewing in Windsurf
-# data/*
-# !data/.gitkeep
+# Data directories that should not be committed
+data/attachment_db/
+data/attachments/
+data/processed_attachments/
+tests/step_6_output/
+tests/step_6_test/
+# Allow .gitkeep files
+!data/.gitkeep
+!data/*/.gitkeep
 
 # Added by Cascade: Ignore large frontend dependencies and specific backup outputs
 frontend/node_modules/

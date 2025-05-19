@@ -44,6 +44,30 @@ class BaseRepository(Generic[T]):
         self.session.commit()
         self.session.refresh(instance)
         return instance
+        
+    def create_from_dict(self, data: Dict[str, Any]) -> T:
+        """
+        Create a new instance from a dictionary of attribute values.
+        This avoids having to import the model class directly, helping prevent circular imports.
+        
+        Args:
+            data: Dictionary of attribute names and values
+            
+        Returns:
+            The created instance with any database-generated values
+        """
+        # Create a new instance of the model class
+        instance = self.model_cls()
+        
+        # Set attributes from the dictionary
+        for key, value in data.items():
+            setattr(instance, key, value)
+            
+        # Add and commit to the database
+        self.session.add(instance)
+        self.session.commit()
+        self.session.refresh(instance)
+        return instance
     
     def get_by_id(self, id_value: Any) -> Optional[T]:
         """

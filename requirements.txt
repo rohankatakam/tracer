@@ -1,6 +1,7 @@
 # Core requirements for Computer Use Agent
 anthropic>=0.15.0
 python-dotenv>=1.0.0
+chardet>=5.0.0
 
 # Database requirements
 sqlalchemy>=2.0.0

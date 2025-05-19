@@ -9,6 +9,7 @@ import { TextArea } from '../../../components/ui/TextArea';
 import { Select } from '../../../components/ui/Select';
 import { FileUpload } from '../../../components/ui/FileUpload';
 import { AttachmentItem } from '../../../components/attachments/AttachmentItem';
+import { ProcessedContentViewer } from '../../../components/attachments/ProcessedContentViewer';
 import { CommentSection } from '../../../components/comments/CommentSection';
 import { 
   BaseSeverity, BaseStatus, Bug, BugSchemaType, 
@@ -144,9 +145,11 @@ export default function BugDetailPage({ params }: BugDetailPageProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [showAttachmentContent, setShowAttachmentContent] = useState<string | null>(null);
+  const [isAttachmentModalOpen, setIsAttachmentModalOpen] = useState(false);
+  const [currentAttachmentId, setCurrentAttachmentId] = useState<string | null>(null);
   const [attachmentContent, setAttachmentContent] = useState<any>(null);
   const [contentLoading, setContentLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<'content' | 'processed'>('content');
   
   // Edit mode state variables
   const [editMode, setEditMode] = useState<'title' | 'description' | 'fields' | null>(null);
@@ -281,7 +284,7 @@ export default function BugDetailPage({ params }: BugDetailPageProps) {
   const handleViewAttachmentContent = async (attachmentId: string) => {
     try {
       setContentLoading(true);
-      setShowAttachmentContent(attachmentId);
+      setCurrentAttachmentId(attachmentId);
       const content = await attachmentAPI.getAttachmentContent(attachmentId);
       setAttachmentContent(content);
     } catch (error) {
@@ -997,91 +1000,119 @@ export default function BugDetailPage({ params }: BugDetailPageProps) {
       </div>
 
       {/* Attachment Content Modal */}
-      {showAttachmentContent && (
+      {currentAttachmentId && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-4xl w-full max-h-screen overflow-auto">
-            <div className="p-4 border-b flex justify-between items-center">
-              <h3 className="text-lg font-medium">Attachment Content</h3>
+            <div className="flex items-center justify-between p-4 md:p-5 border-b rounded-t">              
+              <h3 className="text-xl font-semibold">Attachment Viewer</h3>
               <button
+                type="button"
                 onClick={() => {
-                  setShowAttachmentContent(null);
+                  setCurrentAttachmentId(null);
                   setAttachmentContent(null);
                 }}
-                className="text-gray-500 hover:text-gray-700"
+                className="end-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <svg className="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                  <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M1 1 13 13M1 13 13 1" />
                 </svg>
               </button>
             </div>
             
+            {/* Tab navigation */}
+            <div className="flex border-b">
+              <button
+                className={`flex-1 py-3 px-4 text-center font-medium ${activeTab === 'content' ? 'border-b-2 border-primary text-primary' : 'text-gray-500 hover:text-gray-700'}`}
+                onClick={() => setActiveTab('content')}
+              >
+                Raw Content
+              </button>
+              <button
+                className={`flex-1 py-3 px-4 text-center font-medium ${activeTab === 'processed' ? 'border-b-2 border-primary text-primary' : 'text-gray-500 hover:text-gray-700'}`}
+                onClick={() => setActiveTab('processed')}
+              >
+                Processed Data
+              </button>
+            </div>
+            
             <div className="p-6">
-              {contentLoading ? (
-                <div className="text-center py-10">
-                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                  <p className="mt-2 text-gray-500">Loading content...</p>
-                </div>
-              ) : attachmentContent ? (
-                <>
-                  {attachmentContent.error ? (
-                    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-                      {attachmentContent.error}
-                    </div>
-                  ) : attachmentContent.content_type?.startsWith('image/') ? (
-                    <div className="flex justify-center">
-                      <img
-                        src={`data:${attachmentContent.content_type};base64,${attachmentContent.base64_content}`}
-                        alt="Attachment content"
-                        className="max-w-full max-h-[70vh] object-contain"
-                      />
-                    </div>
-                  ) : attachmentContent.text_content ? (
-                    <div className="bg-gray-50 p-4 rounded max-h-[70vh] overflow-y-auto">
-                      <pre className="whitespace-pre-wrap font-mono text-sm">
-                        {attachmentContent.text_content}
-                      </pre>
-                    </div>
-                  ) : attachmentContent.content_type === 'application/pdf' && attachmentContent.base64_content ? (
-                    <div className="flex flex-col items-center">
-                      <div className="mb-4">
-                        <h3 className="text-lg font-medium">PDF Document: {attachmentContent.filename}</h3>
-                        <p className="text-sm text-gray-500">Size: {(attachmentContent.file_size / 1024).toFixed(1)} KB</p>
+              {activeTab === 'content' ? (
+                contentLoading ? (
+                  <div className="text-center py-10">
+                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    <p className="mt-2 text-gray-500">Loading content...</p>
+                  </div>
+                ) : attachmentContent ? (
+                  <>
+                    {attachmentContent.error ? (
+                      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                        {attachmentContent.error}
                       </div>
-                      <iframe
-                        src={`data:application/pdf;base64,${attachmentContent.base64_content}`}
-                        width="100%"
-                        height="600px"
-                        style={{ border: '1px solid #e5e7eb', borderRadius: '0.375rem' }}
-                        title="PDF Document"
-                      />
-                    </div>
-                  ) : attachmentContent.pages ? (
-                    <div className="bg-gray-50 p-4 rounded max-h-[70vh] overflow-y-auto">
-                      <h3 className="text-lg font-medium mb-4">PDF Content</h3>
-                      {attachmentContent.pages.map((page: any, index: number) => (
-                        <div key={index} className="mb-4 pb-4 border-b border-gray-200">
-                          <h4 className="font-medium mb-2">Page {page.page_number}</h4>
-                          <p className="whitespace-pre-wrap">{page.text}</p>
+                    ) : attachmentContent.content_type?.startsWith('image/') ? (
+                      <div className="flex justify-center">
+                        <img
+                          src={`data:${attachmentContent.content_type};base64,${attachmentContent.base64_content}`}
+                          alt="Attachment content"
+                          className="max-w-full max-h-[70vh] object-contain"
+                        />
+                      </div>
+                    ) : attachmentContent.text_content ? (
+                      <div className="bg-gray-50 p-4 rounded max-h-[70vh] overflow-y-auto">
+                        <pre className="whitespace-pre-wrap font-mono text-sm">
+                          {attachmentContent.text_content}
+                        </pre>
+                      </div>
+                    ) : attachmentContent.content_type === 'application/pdf' && attachmentContent.base64_content ? (
+                      <div className="flex flex-col items-center">
+                        <div className="mb-4">
+                          <h3 className="text-lg font-medium">PDF Document: {attachmentContent.filename}</h3>
+                          <p className="text-sm text-gray-500">Size: {(attachmentContent.file_size / 1024).toFixed(1)} KB</p>
                         </div>
-                      ))}
-                    </div>
-                  ) : attachmentContent.message ? (
-                    <div className="text-center text-gray-500 p-4">
-                      <p className="mb-2 font-medium">{attachmentContent.message}</p>
-                      <p>File: {attachmentContent.filename}</p>
-                      <p>Size: {(attachmentContent.file_size / 1024).toFixed(1)} KB</p>
-                      <p>Type: {attachmentContent.content_type}</p>
-                    </div>
-                  ) : (
-                    <div className="text-center text-gray-500">
-                      This content type cannot be previewed directly.
-                    </div>
-                  )}
-                </>
+                        <iframe
+                          src={`data:application/pdf;base64,${attachmentContent.base64_content}`}
+                          width="100%"
+                          height="600px"
+                          style={{ border: '1px solid #e5e7eb', borderRadius: '0.375rem' }}
+                          title="PDF Document"
+                        />
+                      </div>
+                    ) : attachmentContent.pages ? (
+                      <div className="bg-gray-50 p-4 rounded max-h-[70vh] overflow-y-auto">
+                        <h3 className="text-lg font-medium mb-4">PDF Content</h3>
+                        {attachmentContent.pages.map((page: any, index: number) => (
+                          <div key={index} className="mb-4 pb-4 border-b border-gray-200">
+                            <h4 className="font-medium mb-2">Page {page.page_number}</h4>
+                            <p className="whitespace-pre-wrap">{page.text}</p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : attachmentContent.message ? (
+                      <div className="text-center text-gray-500 p-4">
+                        <p className="mb-2 font-medium">{attachmentContent.message}</p>
+                        <p>File: {attachmentContent.filename}</p>
+                        <p>Size: {(attachmentContent.file_size / 1024).toFixed(1)} KB</p>
+                        <p>Type: {attachmentContent.content_type}</p>
+                      </div>
+                    ) : (
+                      <div className="text-center text-gray-500">
+                        This content type cannot be previewed directly.
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-center text-gray-500">
+                    No content available.
+                  </div>
+                )
               ) : (
-                <div className="text-center text-gray-500">
-                  No content available.
-                </div>
+                // Processed content tab
+                currentAttachmentId ? (
+                  <ProcessedContentViewer attachmentId={currentAttachmentId} />
+                ) : (
+                  <div className="text-center text-gray-500 py-8">
+                    No attachment selected for processing.
+                  </div>
+                )
               )}
             </div>
           </div>

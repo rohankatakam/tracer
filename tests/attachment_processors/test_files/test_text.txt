@@ -1,0 +1,11 @@
+This is a sample text file for testing the attachment processing functionality.
+
+It contains multiple lines and paragraphs to test text extraction features.
+The processor should extract the content, identify the language, and count words and characters.
+
+Some numbers: 12345
+Some special characters: !@#$%^&*()
+Different language example: Bonjour, comment ça va?
+
+The attachment processor should store this text in the database with proper metadata 
+and make it accessible through the API endpoints we've created.
