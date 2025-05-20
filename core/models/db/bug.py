@@ -20,6 +20,7 @@ class BugSchemaType(enum.Enum):
     MOZILLA = "mozilla"
     CHROMIUM = "chromium"
     ORACLE = "oracle"
+    GITHUB = "github"
 
 class BugStatus(enum.Enum):
     """Enum for bug status"""
@@ -154,7 +155,22 @@ class Bug(Base):
     oracle_severity = Column(String)
     oracle_priority = Column(String)
     oracle_close_reason = Column(String)
-    oracle_environment = Column(String)
+    oracle_environment = Column(JSON)  # Store environment details as JSON object
+    
+    # GitHub issue specific fields
+    github_issue_number = Column(Integer)
+    github_repository = Column(String)  # format: "owner/repo"
+    github_issue_url = Column(String)
+    github_state = Column(String)
+    github_labels = Column(JSON)  # Store as JSON array
+    github_milestone = Column(String)
+    github_assignees = Column(JSON)  # Store as JSON array of usernames
+    github_author = Column(String)
+    github_created_at = Column(DateTime)
+    github_updated_at = Column(DateTime)
+    github_closed_at = Column(DateTime)
+    github_closed_by = Column(String)
+    github_is_pull_request = Column(Boolean, default=False)
     
     # Additional data stored as JSON for flexible extensions
     extra_data = Column(JSON, default=dict)
@@ -272,5 +288,45 @@ class Bug(Base):
             
         if hasattr(self, 'oracle_environment') and self.oracle_environment is not None:
             result["oracle_environment"] = self.oracle_environment
+        
+        # GitHub fields
+        if hasattr(self, 'github_issue_number') and self.github_issue_number is not None:
+            result["github_issue_number"] = self.github_issue_number
+            
+        if hasattr(self, 'github_repository') and self.github_repository is not None:
+            result["github_repository"] = self.github_repository
+            
+        if hasattr(self, 'github_issue_url') and self.github_issue_url is not None:
+            result["github_issue_url"] = self.github_issue_url
+            
+        if hasattr(self, 'github_state') and self.github_state is not None:
+            result["github_state"] = self.github_state
+            
+        if hasattr(self, 'github_labels') and self.github_labels is not None:
+            result["github_labels"] = self.github_labels
+            
+        if hasattr(self, 'github_milestone') and self.github_milestone is not None:
+            result["github_milestone"] = self.github_milestone
+            
+        if hasattr(self, 'github_assignees') and self.github_assignees is not None:
+            result["github_assignees"] = self.github_assignees
+            
+        if hasattr(self, 'github_author') and self.github_author is not None:
+            result["github_author"] = self.github_author
+            
+        if hasattr(self, 'github_created_at') and self.github_created_at is not None:
+            result["github_created_at"] = self.github_created_at.isoformat() if hasattr(self.github_created_at, 'isoformat') else self.github_created_at
+            
+        if hasattr(self, 'github_updated_at') and self.github_updated_at is not None:
+            result["github_updated_at"] = self.github_updated_at.isoformat() if hasattr(self.github_updated_at, 'isoformat') else self.github_updated_at
+            
+        if hasattr(self, 'github_closed_at') and self.github_closed_at is not None:
+            result["github_closed_at"] = self.github_closed_at.isoformat() if hasattr(self.github_closed_at, 'isoformat') else self.github_closed_at
+            
+        if hasattr(self, 'github_closed_by') and self.github_closed_by is not None:
+            result["github_closed_by"] = self.github_closed_by
+            
+        if hasattr(self, 'github_is_pull_request') and self.github_is_pull_request is not None:
+            result["github_is_pull_request"] = self.github_is_pull_request
             
         return result

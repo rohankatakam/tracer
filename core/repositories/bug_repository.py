@@ -100,3 +100,25 @@ class BugRepository(BaseRepository[Bug]):
             Updated Bug instance if found, None otherwise
         """
         return self.update_by_id(bug_id, {"status": status})
+        
+    def create_bug_from_dict(self, bug_data: Dict[str, Any]) -> Optional[Bug]:
+        """
+        Create a new bug from a dictionary of attribute values.
+        
+        Args:
+            bug_data: Dictionary of bug attribute names and values
+            
+        Returns:
+            Created Bug instance
+        """
+        try:
+            # Make sure required fields are present
+            if 'title' not in bug_data:
+                raise ValueError("Bug title is required")
+            
+            # Create the bug using the base repository's create_from_dict method
+            bug = self.create_from_dict(bug_data)
+            return bug
+        except Exception as e:
+            print(f"Error creating bug from dictionary: {str(e)}")
+            return None

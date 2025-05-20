@@ -131,3 +131,46 @@ class CommentRepository(BaseRepository[Comment]):
             self.session.commit()
             
         return comment
+        
+    def create_comment_from_dict(self, comment_data: dict) -> Optional[Comment]:
+        """
+        Create a new comment from a dictionary of attribute values.
+        
+        Useful for creating comments from external sources like GitHub issues.
+        
+        Args:
+            comment_data: Dictionary containing comment attributes:
+                - bug_id: ID of the bug this comment belongs to (required)
+                - author: Name of the comment author (required)
+                - text: Content of the comment (required)
+                - timestamp: When the comment was created (optional, defaults to now)
+                - is_private: Whether the comment is private (optional, defaults to False)
+                - attachment_ids: List of attachment IDs (optional)
+            
+        Returns:
+            Created Comment instance or None if creation failed
+        """
+        try:
+            # Make sure required fields are present
+            required_fields = ['bug_id', 'author', 'text']
+            for field in required_fields:
+                if field not in comment_data:
+                    raise ValueError(f"Comment {field} is required")
+            
+            # Extract attachment IDs if present
+            attachment_ids = comment_data.pop('attachment_ids', None)
+            
+            # Create the comment using the base repository's create_from_dict method
+            comment = self.create_from_dict(comment_data)
+            
+            # Add attachment references if provided
+            if comment and attachment_ids:
+                attachments = self._get_attachments_by_ids(attachment_ids)
+                comment.referenced_attachments = attachments
+                self.session.commit()
+                
+            return comment
+            
+        except Exception as e:
+            print(f"Error creating comment from dictionary: {str(e)}")
+            return None
