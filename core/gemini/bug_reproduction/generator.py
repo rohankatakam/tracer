@@ -8,19 +8,20 @@ import json
 import os
 import sys
 import re
+import traceback
 from pathlib import Path
 from dotenv import load_dotenv
 
 # Import from our new structure
 from .schema_converter import convert_to_gemini_schema
 
-def generate_bug_reproduction_graph(github_issue_file, schema_file, system_instruction_file, 
-                                   prompt_template_file, output_file=None, model_name="models/gemini-1.5-flash"):
+def generate_bug_reproduction_graph(bug_data_text: str, schema_file: str, system_instruction_file: str, 
+                                   prompt_template_file: str, output_file=None, model_name="models/gemini-1.5-flash"):
     """
     Generate a bug reproduction graph using the Gemini API with a structured output schema.
     
     Args:
-        github_issue_file: Path to GitHub issue JSON file
+        bug_data_text: A formatted string containing key details about the bug.
         schema_file: Path to JSON schema file
         system_instruction_file: Path to system instruction file 
         prompt_template_file: Path to prompt template file
@@ -42,9 +43,7 @@ def generate_bug_reproduction_graph(github_issue_file, schema_file, system_instr
         print("Install it with: pip install google-generativeai")
         sys.exit(1)
     
-    # Load files
-    with open(github_issue_file, 'r') as f:
-        github_issue = json.load(f)
+    # bug_data_text is already the formatted string. No JSON loading needed for it here.
     
     with open(system_instruction_file, 'r') as f:
         system_instruction = f.read()
@@ -65,9 +64,8 @@ def generate_bug_reproduction_graph(github_issue_file, schema_file, system_instr
     
     enhanced_system_instruction = system_instruction + schema_guidance
     
-    # Format the prompt with GitHub issue data
-    formatted_prompt = prompt_template.replace('{{GITHUB_ISSUE_JSON}}', 
-                                              json.dumps(github_issue, indent=2))
+    # Format the prompt with the bug details string
+    formatted_prompt = prompt_template.replace('{{BUG_DETAILS_TEXT}}', bug_data_text)
     
     # Configure the Gemini API
     api_key = os.environ.get("GEMINI_API_KEY")
@@ -135,30 +133,21 @@ def generate_bug_reproduction_graph(github_issue_file, schema_file, system_instr
                     
                     takeaway = result['reproduction_summary'].get('developer_takeaway', '')
                     if takeaway:
-                        print(f"Developer takeaway: {takeaway[:100]}...")
+                        print(f"Developer takeaway: {takeaway[:100]}...") # Added ellipsis for clarity
+                else:
+                    print("No detailed result summary found in parsed JSON.")
                 
-                return result
+                return json.dumps(result, indent=2) # SUCCESS: Return JSON string
             except json.JSONDecodeError as e:
                 print(f"Error: Failed to parse response as JSON: {e}")
                 print(f"Raw response: {result_text[:500]}...")
-                return {"error": "Failed to parse JSON response", "raw": result_text}
+                return json.dumps({"error": "Failed to parse JSON response from LLM", "raw_snippet": result_text[:500]+"..."}, indent=2)
         else:
-            print("Error: No text in response")
-            print(f"Response attributes: {dir(response)}")
-            return {"error": "No text in response"}
+            print("Error: No text attribute in Gemini response object or response.text is empty.")
+            return json.dumps({"error": "No text in Gemini response or response.text is empty"}, indent=2)
     except Exception as e:
-        print(f"Error calling Gemini API: {e}")
-        
-        # If it's a quota error, provide helpful information
-        error_str = str(e)
-        if "429" in error_str and "quota" in error_str:
-            print("\nYou've hit a quota limit with your Gemini API key.")
-            print("Possible solutions:")
-            print("1. Wait a few minutes and try again")
-            print("2. Check your Google Cloud console for quota information")
-            print("3. Consider upgrading your API plan if this is a recurring issue")
-        
-        return {"error": f"API error: {str(e)}"}
+        print(f"Error calling Gemini API: {e}\n{traceback.format_exc()}")
+        return json.dumps({"error": f"Error calling Gemini API: {str(e)}"}, indent=2)
 
 def main():
     if len(sys.argv) < 5:

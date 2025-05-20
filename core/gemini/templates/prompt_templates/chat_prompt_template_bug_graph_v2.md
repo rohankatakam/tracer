@@ -4,7 +4,7 @@ Focus on creating a graph that is **concise, intuitive, and directly helpful for
 
 GitHub Issue JSON:
 ```json
-{{GITHUB_ISSUE_JSON}}
+{{BUG_DETAILS_TEXT}}
 ```
 
 Your output must be a single JSON object structured as follows:
