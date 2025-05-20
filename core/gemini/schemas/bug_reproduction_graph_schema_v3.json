@@ -1,0 +1,164 @@
+{
+  "type": "object",
+  "properties": {
+    "bug_reproduction_graph": {
+      "type": "object",
+      "properties": {
+        "nodes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Unique identifier for the node."
+              },
+              "role": {
+                "type": "string",
+                "enum": [
+                  "Summary",
+                  "Environment",
+                  "Precondition",
+                  "Action",
+                  "System Response",
+                  "Config",
+                  "Expected Outcome",
+                  "Actual Outcome",
+                  "Reference",
+                  "Log/Error"
+                ],
+                "description": "Type or function of this node in the bug workflow."
+              },
+              "label": {
+                "type": "string",
+                "description": "Short, human-readable label for this node."
+              },
+              "description": {
+                "type": "string",
+                "description": "Detailed explanation for this step/config/log/action."
+              },
+              "step": {
+                "type": "integer",
+                "description": "The sequence order for main steps (optional; use for linear flows)."
+              },
+              "details": {
+                "type": "object",
+                "description": "Optional: Extra info, commands, paths, etc.",
+                "properties": {
+                  "file_path": {
+                    "type": "string"
+                  },
+                  "line_numbers": {
+                    "type": "string"
+                  },
+                  "version": {
+                    "type": "string"
+                  },
+                  "command_executed": {
+                    "type": "string"
+                  },
+                  "additional_info": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "required": [
+              "id",
+              "role",
+              "label"
+            ]
+          }
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "source": {
+                "type": "string",
+                "description": "ID of the source node."
+              },
+              "target": {
+                "type": "string",
+                "description": "ID of the target node."
+              },
+              "relation": {
+                "type": "string",
+                "enum": [
+                  "Next Step",
+                  "Needs",
+                  "Leads To",
+                  "See Also"
+                ],
+                "description": "Type of relationship (sequential, causal, dependency, reference)."
+              },
+              "notes": {
+                "type": "string",
+                "description": "Optional: more detail about this edge's meaning."
+              }
+            },
+            "required": [
+              "source",
+              "target",
+              "relation"
+            ]
+          }
+        }
+      },
+      "required": [
+        "nodes",
+        "edges"
+      ]
+    },
+    "reproduction_summary": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Short summary/title for the bug."
+        },
+        "issue_number": {
+          "type": "string",
+          "description": "Bug/issue/ticket number."
+        },
+        "developer_tip": {
+          "type": "string",
+          "description": "1-2 sentence actionable insight for a developer."
+        },
+        "complexity": {
+          "type": "string",
+          "enum": [
+            "Low",
+            "Medium",
+            "High"
+          ],
+          "description": "Estimated complexity to reproduce."
+        },
+        "critical_env": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "List of crucial environment factors (e.g., OS, version, settings)."
+        },
+        "steps_count": {
+          "type": "integer",
+          "description": "Number of distinct steps/actions in the process."
+        }
+      },
+      "required": [
+        "title",
+        "issue_number",
+        "developer_tip",
+        "complexity",
+        "critical_env",
+        "steps_count"
+      ]
+    }
+  },
+  "required": [
+    "bug_reproduction_graph",
+    "reproduction_summary"
+  ]
+}

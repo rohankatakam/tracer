@@ -1,0 +1,81 @@
+{
+  "bug_reproduction_graph": {
+    "nodes": [
+      {
+        "id": "node1",
+        "role": "Summary",
+        "label": "phi-2 Pod Crash",
+        "description": "Pod 'workspace-phi-2-dd0fb' experiences crashLoopBackOff due to a ValueError."
+      },
+      {
+        "id": "node2",
+        "role": "Environment",
+        "label": "Azure AKS",
+        "description": "Azure Local hybrid AKS, nodepool Standard_NC8_A2 (16GB GPU)"
+      },
+      {
+        "id": "node3",
+        "role": "Action",
+        "label": "Deploy Workspace",
+        "step": 1,
+        "description": "Deploy the provided YAML configuration for the 'workspace-phi-2-dd0fb' pod."
+      },
+      {
+        "id": "node4",
+        "role": "System Response",
+        "label": "Pod Crash",
+        "description": "Pod enters 'crashLoopBackOff' state."
+      },
+      {
+        "id": "node5",
+        "role": "Log/Error",
+        "label": "ValueError",
+        "description": "FlashAttention error: Head size 80 is not supported. Supported sizes: [32, 64, 96, 128, 160, 192, 224, 256].  See full log for details."
+      },
+      {
+        "id": "node6",
+        "role": "Reference",
+        "label": "YAML Config",
+        "description": "The YAML configuration used for deployment (see issue description)."
+      }
+    ],
+    "edges": [
+      {
+        "source": "node3",
+        "target": "node4",
+        "relation": "Leads To"
+      },
+      {
+        "source": "node4",
+        "target": "node5",
+        "relation": "Leads To"
+      },
+      {
+        "source": "node2",
+        "target": "node3",
+        "relation": "Needs"
+      },
+      {
+        "source": "node3",
+        "target": "node6",
+        "relation": "See Also"
+      },
+      {
+        "source": "node1",
+        "target": "node4",
+        "relation": "Next Step"
+      }
+    ]
+  },
+  "reproduction_summary": {
+    "title": "phi-2 Pod Crash",
+    "issue_number": "1101",
+    "developer_tip": "Investigate the incompatibility between the phi-2 model and FlashAttention's supported head sizes.  Consider using a different attention backend or adjusting model parameters.",
+    "complexity": "Medium",
+    "critical_env": [
+      "Azure AKS",
+      "Standard_NC8_A2 nodepool"
+    ],
+    "steps_count": 1
+  }
+}

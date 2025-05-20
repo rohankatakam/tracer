@@ -1,0 +1,123 @@
+{
+  "type": "object",
+  "properties": {
+    "bug_reproduction_graph": {
+      "type": "object",
+      "properties": {
+        "nodes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Unique, concise identifier for the node (e.g., 'setup_db', 'click_login_button')."
+              },
+              "type": {
+                "type": "string",
+                "description": "Categorizes the node's role in the bug reproduction.",
+                "enum": [
+                  "issue_summary",
+                  "environment_factor",
+                  "prerequisite_condition",
+                  "user_action",
+                  "system_behavior",
+                  "configuration_setting",
+                  "file_reference",
+                  "log_snippet",
+                  "expected_result",
+                  "actual_result",
+                  "code_snippet_reference"
+                ]
+              },
+              "label": {
+                "type": "string",
+                "description": "Short, human-readable label for display on the graph (e.g., 'Database Setup', 'Login Attempt')."
+              },
+              "description": {
+                "type": "string",
+                "description": "Detailed explanation of the node's content or significance. For logs/errors, a summary."
+              },
+              "sequence_number": {
+                "type": "integer",
+                "description": "Optional: Order for 'user_action' nodes or other sequential steps in reproduction."
+              },
+              "source_text_reference": {
+                "type": "string",
+                "description": "Optional: Snippet from the original issue text this node is derived from."
+              },
+              "metadata": {
+                "type": "object",
+                "description": "Optional: Additional key-value details like file paths, versions, commands.",
+                "properties": {
+                  "file_path": { "type": "string" },
+                  "line_numbers": { "type": "string" },
+                  "version": { "type": "string" },
+                  "command_executed": { "type": "string", "description": "A specific command that was run." }
+                }
+              }
+            },
+            "required": ["id", "type", "label"]
+          }
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "source": { "type": "string", "description": "ID of the source node for the edge." },
+              "target": { "type": "string", "description": "ID of the target node for the edge." },
+              "label": {
+                "type": "string",
+                "description": "Describes the high-level relationship: THEN (sequential steps), RESULTS_IN (causal outcome), REQUIRES (prerequisite), REFERENCES (contextual link).",
+                "enum": [
+                  "THEN",
+                  "RESULTS_IN",
+                  "REQUIRES",
+                  "REFERENCES"
+                ]
+              },
+              "description": { "type": "string", "description": "Optional: Further detail about the edge relationship." }
+            },
+            "required": ["source", "target", "label"]
+          }
+        }
+      },
+      "required": ["nodes", "edges"]
+    },
+    "reproduction_summary": {
+      "type": "object",
+      "properties": {
+        "issue_title": { "type": "string", "description": "Original title of the GitHub issue." },
+        "issue_number": { "type": "string", "description": "Original number of the GitHub issue." },
+        "developer_takeaway": {
+          "type": "string",
+          "description": "A very concise (1-2 sentence) actionable insight or key focus area for the developer."
+        },
+        "overall_complexity": {
+          "type": "string",
+          "description": "Estimated complexity to reproduce the bug (low, medium, high).",
+          "enum": ["low", "medium", "high"]
+        },
+        "key_environment_factors": {
+          "type": "array",
+          "description": "Crucial environment settings/versions for reproduction.",
+          "items": { "type": "string" }
+        },
+        "number_of_steps": {
+          "type": "integer",
+          "description": "Estimated number of distinct user actions or setup steps to reproduce."
+        }
+      },
+      "required": [
+        "issue_title",
+        "issue_number",
+        "developer_takeaway",
+        "overall_complexity",
+        "key_environment_factors",
+        "number_of_steps"
+      ]
+    }
+  },
+  "required": ["bug_reproduction_graph", "reproduction_summary"]
+}
