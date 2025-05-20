@@ -4,6 +4,7 @@ export enum BugSchemaType {
   MOZILLA = 'mozilla',
   CHROMIUM = 'chromium',
   ORACLE = 'oracle',
+  GITHUB_ISSUE = 'github', // Changed from 'github_issue' to match backend expectations
 }
 
 // Base type enums
@@ -147,8 +148,22 @@ export interface OracleBug extends BaseBug {
   oracle_environment?: string;
 }
 
+// GitHub Issue schema bug
+export interface GitHubIssueBug extends BaseBug {
+  schema_type: BugSchemaType.GITHUB_ISSUE;
+  github_issue_number?: number;
+  github_issue_url?: string;
+  github_repo?: string;
+  github_owner?: string;
+  github_state?: string;
+  github_labels?: string[];
+  github_assignees?: string[];
+  github_created_at?: string;
+  github_updated_at?: string;
+}
+
 // Bug union type for all schemas
-export type Bug = BaseTypeBug | MozillaBug | ChromiumBug | OracleBug;
+export type Bug = BaseTypeBug | MozillaBug | ChromiumBug | OracleBug | GitHubIssueBug;
 
 // Create bug request types
 export interface BaseCreateBugRequest {
@@ -206,8 +221,23 @@ export interface OracleCreateRequest extends BaseCreateBugRequest {
   oracle_environment?: string;
 }
 
+// GitHub Issue type create request
+export interface GitHubIssueCreateRequest extends BaseCreateBugRequest {
+  schema_type: BugSchemaType.GITHUB_ISSUE;
+  github_issue_number?: number;
+  github_issue_url?: string;
+  github_repo?: string;
+  github_owner?: string;
+  github_state?: string;
+  github_labels?: string[];
+  github_assignees?: string[];
+  github_created_at?: string;
+  github_updated_at?: string;
+  github_closed_at?: string | null;
+}
+
 // Create request union type
-export type CreateBugRequest = BaseTypeCreateRequest | MozillaCreateRequest | ChromiumCreateRequest | OracleCreateRequest;
+export type CreateBugRequest = BaseTypeCreateRequest | MozillaCreateRequest | ChromiumCreateRequest | OracleCreateRequest | GitHubIssueCreateRequest;
 
 // Update bug request types (similar to create but all fields optional)
 export interface BaseUpdateBugRequest {
@@ -265,8 +295,22 @@ export interface OracleUpdateRequest extends BaseUpdateBugRequest {
   oracle_environment?: string;
 }
 
+// GitHub Issue type update request
+export interface GitHubIssueUpdateRequest extends BaseUpdateBugRequest {
+  schema_type?: BugSchemaType.GITHUB_ISSUE;
+  github_issue_number?: number;
+  github_issue_url?: string;
+  github_repo?: string;
+  github_owner?: string;
+  github_state?: string;
+  github_labels?: string[];
+  github_assignees?: string[];
+  github_created_at?: string;
+  github_updated_at?: string;
+}
+
 // Update request union type
-export type UpdateBugRequest = BaseTypeUpdateRequest | MozillaUpdateRequest | ChromiumUpdateRequest | OracleUpdateRequest;
+export type UpdateBugRequest = BaseTypeUpdateRequest | MozillaUpdateRequest | ChromiumUpdateRequest | OracleUpdateRequest | GitHubIssueUpdateRequest;
 
 export interface Attachment {
   attachment_id: string;

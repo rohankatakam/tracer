@@ -1,21 +1,43 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useCallback, useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
+import Link from 'next/link';
+import axios from 'axios';
+
+// Component imports
+import { GitHubIssueImportModal } from '../../../components/bugs/GitHubIssueImportModal';
 import { Input } from '../../../components/ui/Input';
+import { Button } from '../../../components/ui/Button';
 import { TextArea } from '../../../components/ui/TextArea';
 import { Select } from '../../../components/ui/Select';
-import { Button } from '../../../components/ui/Button';
 import { FileUpload } from '../../../components/ui/FileUpload';
-import {
-  CreateBugRequest, BugSchemaType, 
-  BaseSeverity, BaseStatus,
-  MozillaSeverity, MozillaPriority, MozillaStatus, MozillaResolution,
-  ChromiumPriority, ChromiumType, ChromiumStatus,
-  BaseTypeCreateRequest, MozillaCreateRequest, ChromiumCreateRequest, OracleCreateRequest
+
+// Service imports
+import { attachmentAPI, bugAPI } from '../../../services/api-client';
+import { fetchGitHubIssue } from '../../../services/github-api';
+
+// Type imports
+import { 
+  BaseSeverity, 
+  BaseStatus, 
+  Bug, 
+  BugSchemaType, 
+  BaseTypeCreateRequest,
+  ChromiumCreateRequest, 
+  ChromiumPriority, 
+  ChromiumStatus, 
+  ChromiumType, 
+  CreateBugRequest, 
+  GitHubIssueCreateRequest,
+  MozillaCreateRequest, 
+  MozillaPriority, 
+  MozillaResolution,
+  MozillaSeverity, 
+  MozillaStatus, 
+  OracleCreateRequest 
 } from '../../../types/bug';
-import { bugAPI, attachmentAPI } from '../../../services/api-client';
 
 // Bug schema type options
 const schemaTypeOptions = [
@@ -23,6 +45,16 @@ const schemaTypeOptions = [
   { value: BugSchemaType.MOZILLA, label: 'Mozilla/Bugzilla' },
   { value: BugSchemaType.CHROMIUM, label: 'Chromium Issue' },
   { value: BugSchemaType.ORACLE, label: 'Oracle' },
+  { value: BugSchemaType.GITHUB_ISSUE, label: 'GitHub Issue' },
+];
+
+// General Bug Schema Type Options
+const bugSchemaOptions = [
+  { value: BugSchemaType.BASE, label: 'Base Bug' },
+  { value: BugSchemaType.MOZILLA, label: 'Mozilla/Bugzilla' },
+  { value: BugSchemaType.CHROMIUM, label: 'Chromium' },
+  { value: BugSchemaType.ORACLE, label: 'Oracle' },
+  { value: BugSchemaType.GITHUB_ISSUE, label: 'GitHub Issue' },
 ];
 
 // Base severity options
@@ -132,12 +164,17 @@ const oracleStatusOptions = [
 
 export default function CreateBugPage() {
   const router = useRouter();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [submitError, setSubmitError] = useState<string | null>(null);
-  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const searchParams = useSearchParams();
   const [selectedSchemaType, setSelectedSchemaType] = useState<BugSchemaType>(BugSchemaType.BASE);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [isLoadingGitHubIssue, setIsLoadingGitHubIssue] = useState(false);
+  const [githubIssueError, setGithubIssueError] = useState<string | null>(null);
   const [schemaTypeSelected, setSchemaTypeSelected] = useState<boolean>(false);
+  // Ref to track if we've already processed a GitHub URL - must be declared at component level
+  const hasProcessedUrlRef = React.useRef(false);
   
   // Create default values based on the schema type
   const getDefaultValues = () => {
@@ -188,29 +225,149 @@ export default function CreateBugPage() {
           oracle_severity: 'Medium',
         } as OracleCreateRequest;
       
+      case BugSchemaType.GITHUB_ISSUE:
+        return {
+          ...commonDefaults,
+          schema_type: BugSchemaType.GITHUB_ISSUE,
+          github_issue_number: 0,
+          github_state: 'open',
+          github_labels: [],
+          github_assignees: [],
+        } as GitHubIssueCreateRequest;
+
       default:
         return {
           ...commonDefaults,
           schema_type: BugSchemaType.BASE,
           severity: BaseSeverity.MEDIUM,
+          status: BaseStatus.NEW,
         } as BaseTypeCreateRequest;
     }
   };
   
   // Define a type that includes all possible error fields from all bug schema types
   type BugFormErrors = {
-    [key: string]: any; // This allows access to any property with string access
+    [key: string]: { message?: string }
   };
-  
+
+  // Initialize form with stricter validation for required fields
   const { 
     control,
     handleSubmit,
     watch,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<CreateBugRequest>({
     defaultValues: getDefaultValues(),
+    mode: 'onBlur', // Validate on blur for better user experience
   });
+  
+  // Effect to handle GitHub Issue import from URL parameter
+  useEffect(() => {
+    const githubIssueUrl = searchParams.get('githubIssueUrl');
+    
+    if (githubIssueUrl && !hasProcessedUrlRef.current) {
+      hasProcessedUrlRef.current = true; // Mark as processed for this URL
+      
+      const loadGitHubIssue = async () => {
+        try {
+          setIsLoadingGitHubIssue(true);
+          setGithubIssueError(null);
+          
+          // Set schema type state
+          setSelectedSchemaType(BugSchemaType.GITHUB_ISSUE);
+          setSchemaTypeSelected(true);
+
+          // Prepare a complete default object for resetting to GitHub issue type
+          // This ensures all fields are initialized correctly according to GitHubIssueCreateRequest
+          const defaultsForGithubReset: GitHubIssueCreateRequest = {
+            title: '',
+            description: '',
+            reporter: '', // Will be overwritten by setValue from issueData.user.login if available
+            product: '',
+            component: '',
+            version: '',
+            platform: '',
+            operating_system: '',
+            schema_type: BugSchemaType.GITHUB_ISSUE,
+            github_issue_number: 0,
+            github_state: 'open',
+            github_labels: [],
+            github_assignees: [],
+            github_issue_url: '',
+            github_repo: '',
+            github_owner: '',
+            github_created_at: new Date().toISOString(), // Placeholder, will be updated
+            github_updated_at: new Date().toISOString(), // Placeholder, will be updated
+            github_closed_at: null, // Placeholder, will be updated if issue is closed
+            // Include other fields from GitHubIssueCreateRequest initialized to their defaults
+          };
+          reset(defaultsForGithubReset);
+
+          // Fetch GitHub issue data with a timeout
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => {
+            controller.abort();
+            console.warn('GitHub issue fetch timed out for URL:', githubIssueUrl);
+          }, 10000); // 10-second timeout
+
+          try {
+            const issueData = await fetchGitHubIssue(decodeURIComponent(githubIssueUrl));
+            clearTimeout(timeoutId); // Clear timeout as fetch was successful
+            
+            // Populate form with GitHub issue data
+            setValue('schema_type', BugSchemaType.GITHUB_ISSUE, { shouldValidate: true });
+            setValue('title', issueData.title || 'Untitled Issue', { shouldValidate: true });
+            setValue('description', issueData.body || '', { shouldValidate: true });
+            setValue('reporter', issueData.user?.login || '', { shouldValidate: true });
+
+            setValue('github_issue_number', typeof issueData.number === 'number' ? issueData.number : 0);
+            setValue('github_issue_url', issueData.html_url || '');
+            setValue('github_repo', issueData.repository?.name || '');
+            setValue('github_owner', issueData.repository?.owner?.login || '');
+            setValue('github_state', issueData.state || 'open');
+            
+            setValue('github_labels', 
+              Array.isArray(issueData.labels) 
+                ? issueData.labels.map((label: any) => (label && typeof label === 'object' && label.name) || '').filter(Boolean) 
+                : []
+            );
+            setValue('github_assignees', 
+              Array.isArray(issueData.assignees) 
+                ? issueData.assignees.map((assignee: any) => (assignee && typeof assignee === 'object' && assignee.login) || '').filter(Boolean) 
+                : []
+            );
+            
+            setValue('github_created_at', issueData.created_at || new Date().toISOString());
+            setValue('github_updated_at', issueData.updated_at || new Date().toISOString());
+            if (issueData.closed_at) {
+              setValue('github_closed_at', issueData.closed_at);
+            } else {
+              setValue('github_closed_at', null); // Explicitly set to null if not closed
+            }
+
+          } catch (fetchError: any) {
+            clearTimeout(timeoutId); // Clear timeout if fetch itself failed
+            console.error('Error fetching or processing GitHub issue data:', fetchError);
+            const message = fetchError?.message || 'Unknown error';
+            if (fetchError?.name === 'AbortError') {
+              setGithubIssueError('Failed to load GitHub issue: Request timed out. Check URL/network.');
+            } else {
+              setGithubIssueError(`Failed to load GitHub issue: ${message}. Check URL and try again.`);
+            }
+          }
+        } catch (outerError: any) {
+          console.error('Error in loadGitHubIssue setup:', outerError);
+          setGithubIssueError('An unexpected error occurred. Please refresh and try again.');
+        } finally {
+          setIsLoadingGitHubIssue(false);
+        }
+      };
+      
+      loadGitHubIssue();
+    }
+  }, [searchParams, reset, setValue, setSelectedSchemaType, setSchemaTypeSelected, setIsLoadingGitHubIssue, setGithubIssueError, hasProcessedUrlRef]);
   
   // Cast errors to the more permissive type to avoid TypeScript errors with union types
   const formErrors = errors as BugFormErrors;
@@ -248,25 +405,102 @@ export default function CreateBugPage() {
       setIsSubmitting(true);
       setSubmitError(null);
       
-      // Step 1: Create the bug
-      const newBug = await bugAPI.create(data);
-      
-      // Step 2: Upload attachments (if any)
-      if (selectedFiles.length > 0) {
-        setUploadProgress(0);
+      // Ensure all required fields are present for GitHub Issues
+      if (data.schema_type === BugSchemaType.GITHUB_ISSUE) {
+        // Format data for FastAPI compatibility
+        // FastAPI is strict about null vs undefined and empty arrays vs empty strings
+        const gitHubData = data as GitHubIssueCreateRequest;
         
-        for (let i = 0; i < selectedFiles.length; i++) {
-          const file = selectedFiles[i];
-          await attachmentAPI.uploadAttachment(newBug.bug_id, file);
-          setUploadProgress(Math.round(((i + 1) / selectedFiles.length) * 100));
+        // Create a clean object with only the fields the API expects
+        const processedData = {
+          schema_type: BugSchemaType.GITHUB_ISSUE,
+          title: gitHubData.title || 'Untitled Issue',
+          description: gitHubData.description || '',
+          reporter: gitHubData.reporter || '',
+          product: gitHubData.product || '',
+          component: gitHubData.component || '',
+          version: gitHubData.version || '',
+          platform: gitHubData.platform || '',
+          operating_system: gitHubData.operating_system || '',
+          
+          // GitHub specific fields
+          github_issue_number: gitHubData.github_issue_number || 0,
+          github_issue_url: gitHubData.github_issue_url || '',
+          github_repo: gitHubData.github_repo || '',
+          github_owner: gitHubData.github_owner || '',
+          github_state: gitHubData.github_state || 'open',
+          
+          // Convert arrays to proper formats for FastAPI
+          github_labels: Array.isArray(gitHubData.github_labels) ? gitHubData.github_labels : [],
+          github_assignees: Array.isArray(gitHubData.github_assignees) ? gitHubData.github_assignees : [],
+          
+          // Format dates as proper ISO strings
+          github_created_at: gitHubData.github_created_at || new Date().toISOString(),
+          github_updated_at: gitHubData.github_updated_at || new Date().toISOString()
+        };
+        
+        console.log('Submitting GitHub issue bug with data:', processedData);
+        
+        // Step 1: Create the bug with processed data
+        const newBug = await bugAPI.create(processedData);
+        
+        // Steps 2-3 remain the same...
+        if (selectedFiles.length > 0) {
+          setUploadProgress(0);
+          
+          for (let i = 0; i < selectedFiles.length; i++) {
+            const file = selectedFiles[i];
+            await attachmentAPI.uploadAttachment(newBug.bug_id, file);
+            setUploadProgress(Math.round(((i + 1) / selectedFiles.length) * 100));
+          }
+        }
+        
+        // Navigate to the newly created bug
+        router.push(`/bugs/${newBug.bug_id}`);
+      } else {
+        // For non-GitHub issues, use the original flow
+        console.log('Submitting regular bug with data:', data);
+        
+        // Step 1: Create the bug
+        const newBug = await bugAPI.create(data);
+        
+        // Step 2: Upload attachments (if any)
+        if (selectedFiles.length > 0) {
+          setUploadProgress(0);
+          
+          for (let i = 0; i < selectedFiles.length; i++) {
+            const file = selectedFiles[i];
+            await attachmentAPI.uploadAttachment(newBug.bug_id, file);
+            setUploadProgress(Math.round(((i + 1) / selectedFiles.length) * 100));
+          }
+        }
+        
+        // Step 3: Navigate to the newly created bug
+        router.push(`/bugs/${newBug.bug_id}`);
+      }
+    } catch (error) {
+      console.error('Error creating bug:', error);
+      // More detailed error message from the API response
+      let errorMessage = 'Failed to create bug. Please try again.';
+      
+      // Safe type checking for Axios errors
+      if (error && typeof error === 'object' && 'isAxiosError' in error) {
+        const axiosError = error as any;
+        if (axiosError.response?.data) {
+          console.log('API error details:', axiosError.response.data);
+          if (axiosError.response.status === 422) {
+            errorMessage = 'Validation error: Some required fields are missing or invalid. Check the GitHub issue data format.';
+            // Log detailed validation errors if available
+            if (axiosError.response.data.detail) {
+              console.log('Validation errors:', axiosError.response.data.detail);
+            }
+          } else {
+            errorMessage = `Server error: ${axiosError.response.status} - ${JSON.stringify(axiosError.response.data)}`;
+          }
         }
       }
       
-      // Step 3: Navigate to the newly created bug
-      router.push(`/bugs/${newBug.bug_id}`);
-    } catch (error) {
-      console.error('Error creating bug:', error);
-      setSubmitError('Failed to create bug. Please try again.');
+      setSubmitError(errorMessage);
       setIsSubmitting(false);
     }
   };
@@ -728,6 +962,104 @@ export default function CreateBugPage() {
     </>
   );
 
+  // GitHub Issue schema-specific fields
+  const renderGitHubIssueFields = () => (
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <Controller
+            name="github_issue_number"
+            control={control}
+            render={({ field }) => (
+              <Input
+                {...field}
+                type="number"
+                label="GitHub Issue Number"
+                placeholder="e.g., 123"
+                disabled={isLoadingGitHubIssue}
+              />
+            )}
+          />
+        </div>
+        
+        <div>
+          <Controller
+            name="github_issue_url"
+            control={control}
+            render={({ field }) => (
+              <Input
+                {...field}
+                label="GitHub Issue URL"
+                placeholder="https://github.com/owner/repo/issues/123"
+                disabled={isLoadingGitHubIssue}
+              />
+            )}
+          />
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <Controller
+            name="github_repo"
+            control={control}
+            render={({ field }) => (
+              <Input
+                {...field}
+                label="Repository"
+                placeholder="e.g., react"
+                disabled={isLoadingGitHubIssue}
+              />
+            )}
+          />
+        </div>
+        
+        <div>
+          <Controller
+            name="github_owner"
+            control={control}
+            render={({ field }) => (
+              <Input
+                {...field}
+                label="Owner"
+                placeholder="e.g., facebook"
+                disabled={isLoadingGitHubIssue}
+              />
+            )}
+          />
+        </div>
+      </div>
+      
+      <div>
+        <Controller
+          name="github_state"
+          control={control}
+          render={({ field }) => (
+            <Input
+              {...field}
+              label="Issue State"
+              placeholder="e.g., open, closed"
+              disabled={isLoadingGitHubIssue}
+            />
+          )}
+        />
+      </div>
+      
+      {githubIssueError && (
+        <div className="mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          {githubIssueError}
+        </div>
+      )}
+      
+      {isLoadingGitHubIssue && (
+        <div className="mt-4 text-center py-4">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <p className="mt-2 text-gray-500">Loading GitHub issue data...</p>
+        </div>
+      )}
+    </>
+  ); // This closes renderGitHubIssueFields
+
   // Render schema-specific fields based on selected schema type
   const renderSchemaFields = () => {
     switch (selectedSchemaType) {
@@ -739,25 +1071,139 @@ export default function CreateBugPage() {
         return renderChromiumFields();
       case BugSchemaType.ORACLE:
         return renderOracleFields();
+      case BugSchemaType.GITHUB_ISSUE:
+        return renderGitHubIssueFields();
       default:
         return renderBaseFields();
     }
   };
-
+  
   return (
-    <div className="max-w-3xl mx-auto">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Report New Bug</h1>
-      
+    <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 bg-white shadow-lg rounded-lg">
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">Create New Bug Report</h1>
+      {/* Display general submission error */} 
       {submitError && (
-        <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-          {submitError}
+        <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          <p className="font-semibold">Error Submitting Bug:</p>
+          <p>{submitError}</p>
         </div>
       )}
-      
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        {/* Common fields for all bug schemas */}
-        {renderCommonFields()}
-        
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 divide-y divide-gray-200">
+        {/* Schema Type Selector - Placed before common fields for clarity */} 
+        <div className="pt-8">
+          <div>
+            <h3 className="text-lg leading-6 font-medium text-gray-900">Bug Schema Type</h3>
+            <p className="mt-1 text-sm text-gray-500">
+              Select the type of bug report you want to create. This will tailor the available fields.
+            </p>
+          </div>
+          <div className="mt-6">
+            <Controller
+              name="schema_type"
+              control={control}
+              rules={{ required: 'Schema type is required' }}
+              render={({ field }) => (
+                <Select
+                  {...field}
+                  label="Schema Type"
+                  options={bugSchemaOptions}
+                  onChange={(value: string) => { // The Select component passes the value as a string
+                    const newType = value as BugSchemaType;
+                    field.onChange(newType); // Pass the casted value to react-hook-form
+                    handleSchemaTypeChange(newType); // Pass to custom handler
+                  }}
+                  value={selectedSchemaType} // Ensure this reflects the actual selected state
+                  disabled={schemaTypeSelected} // Disable after first selection or GitHub import
+                />
+              )}
+            />
+            {formErrors.schema_type && <p className="mt-2 text-sm text-red-600">{formErrors.schema_type.message}</p>}
+          </div>
+        </div>
+
+        {/* Common Fields - Title, Description, Reporter etc. */} 
+        <div className="pt-8">
+          <div>
+            <h3 className="text-lg leading-6 font-medium text-gray-900">Common Details</h3>
+          </div>
+          <div className="mt-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+            <div className="sm:col-span-6">
+              <Controller
+                name="title"
+                control={control}
+                rules={{ required: 'Title is required' }}
+                render={({ field }) => <Input {...field} label="Title" placeholder="Short summary of the bug" />}
+              />
+              {formErrors.title && <p className="mt-2 text-sm text-red-600">{formErrors.title.message}</p>}
+            </div>
+
+            <div className="sm:col-span-6">
+              <Controller
+                name="description"
+                control={control}
+                rules={{ required: 'Description is required' }}
+                render={({ field }) => (
+                  <TextArea
+                    {...field}
+                    label="Description"
+                    placeholder="Detailed steps to reproduce, expected vs. actual results"
+                    rows={6}
+                  />
+                )}
+              />
+              {formErrors.description && <p className="mt-2 text-sm text-red-600">{formErrors.description.message}</p>}
+            </div>
+            
+            <div className="sm:col-span-3">
+              <Controller
+                name="reporter"
+                control={control}
+                render={({ field }) => <Input {...field} label="Reporter (Optional)" placeholder="Your name or email" />}
+              />
+            </div>
+
+            <div className="sm:col-span-3">
+              <Controller
+                name="product"
+                control={control}
+                render={({ field }) => <Input {...field} label="Product (Optional)" placeholder="e.g., My Awesome App" />}
+              />
+            </div>
+
+            <div className="sm:col-span-3">
+              <Controller
+                name="component"
+                control={control}
+                render={({ field }) => <Input {...field} label="Component (Optional)" placeholder="e.g., User Login Page" />}
+              />
+            </div>
+
+            <div className="sm:col-span-3">
+              <Controller
+                name="version"
+                control={control}
+                render={({ field }) => <Input {...field} label="Version (Optional)" placeholder="e.g., 1.0.2" />}
+              />
+            </div>
+
+            <div className="sm:col-span-3">
+              <Controller
+                name="platform"
+                control={control}
+                render={({ field }) => <Input {...field} label="Platform (Optional)" placeholder="e.g., Web, iOS, Android" />}
+              />
+            </div>
+
+            <div className="sm:col-span-3">
+              <Controller
+                name="operating_system"
+                control={control}
+                render={({ field }) => <Input {...field} label="Operating System (Optional)" placeholder="e.g., Windows 11, macOS Sonoma" />}
+              />
+            </div>
+          </div>
+        </div>
+
         {/* Schema-specific fields */}
         <div className="mt-6 pt-6 border-t border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
@@ -765,6 +1211,7 @@ export default function CreateBugPage() {
             {selectedSchemaType === BugSchemaType.MOZILLA && 'Mozilla/Bugzilla Details'}
             {selectedSchemaType === BugSchemaType.CHROMIUM && 'Chromium Details'}
             {selectedSchemaType === BugSchemaType.ORACLE && 'Oracle Details'}
+            {selectedSchemaType === BugSchemaType.GITHUB_ISSUE && 'GitHub Issue Details'}
           </h2>
           {renderSchemaFields()}
         </div>
