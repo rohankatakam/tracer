@@ -1,0 +1,241 @@
+{
+  "type": "object",
+  "properties": {
+    "bug_reproduction_graph": {
+      "type": "object",
+      "properties": {
+        "nodes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Unique identifier for the node (e.g., 'node-1', 'action-init-setup'). Required by React Flow."
+              },
+              "role": {
+                "type": "string",
+                "description": "The primary function or category of this node in the bug reproduction workflow. Helps in styling or categorizing nodes.",
+                "enum": [
+                  "Summary",
+                  "EnvironmentSetup",
+                  "Precondition",
+                  "UserAction",
+                  "SystemResponse",
+                  "Configuration",
+                  "ExpectedOutcome",
+                  "ActualOutcome",
+                  "CodeReference",
+                  "LogEvidence",
+                  "DataPayload",
+                  "VerificationPoint"
+                ]
+              },
+              "label": {
+                "type": "string",
+                "description": "A concise, human-readable label displayed on the node in a UI (e.g., 'Set API Key', 'Verify DB Record'). This is often used as the node's primary text in React Flow."
+              },
+              "description": {
+                "type": "string",
+                "description": "A more detailed explanation of what this node represents or the action to be taken. Can be shown in a tooltip or detail panel."
+              },
+              "step_order": {
+                "type": "integer",
+                "description": "Sequential order for critical path actions or steps, if applicable (e.g., 1, 2, 3). Optional, useful for linear flows."
+              },
+              "position": {
+                "type": "object",
+                "description": "XY coordinates for visual placement of the node in a UI graph. The LLM should generate plausible, distinct coordinates for each node to create a readable initial layout (e.g., nodes spread out, not overlapping).",
+                "properties": {
+                  "x": {
+                    "type": "number",
+                    "description": "The X-coordinate for positioning the node on a 2D canvas. Required by React Flow for initial layout."
+                  },
+                  "y": {
+                    "type": "number",
+                    "description": "The Y-coordinate for positioning the node on a 2D canvas. Required by React Flow for initial layout."
+                  }
+                },
+                "required": [
+                  "x",
+                  "y"
+                ]
+              },
+              "details": {
+                "type": "object",
+                "description": "Optional key-value pairs for specific data related to the node (e.g., file paths, commands, version numbers). These can be used to provide more context or data without cluttering the main label/description.",
+                "properties": {
+                  "backgroundColor": {
+                    "type": "string",
+                    "description": "Optional: CSS-friendly background color for the node (e.g., '#E6F7FF', 'lightyellow', 'rgb(255,228,225)'). Helps differentiate node types visually."
+                  },
+                  "borderColor": {
+                    "type": "string",
+                    "description": "Optional: CSS-friendly border color for the node (e.g., '#91D5FF', 'orange', 'rgb(255,102,102)'). Complements backgroundColor."
+                  },
+                  "file_path": {
+                    "type": "string",
+                    "description": "Relevant file path (e.g., '/src/auth/service.py')."
+                  },
+                  "line_numbers": {
+                    "type": "string",
+                    "description": "Specific line numbers or range (e.g., '42-45')."
+                  },
+                  "version_info": {
+                    "type": "string",
+                    "description": "Version of software, library, or component (e.g., 'Python 3.9.1', 'React 17.0.2')."
+                  },
+                  "command_to_execute": {
+                    "type": "string",
+                    "description": "A shell command or script to run (e.g., 'npm run test:unit')."
+                  },
+                  "api_endpoint": {
+                    "type": "string",
+                    "description": "API endpoint URL (e.g., 'GET /api/users/{id}')."
+                  },
+                  "payload_or_code_snippet": {
+                    "type": "string",
+                    "description": "JSON payload, code snippet, or relevant data for the step."
+                  },
+                  "additional_notes": {
+                    "type": "string",
+                    "description": "Any other relevant structured information."
+                  }
+                }
+              }
+            },
+            "required": [
+              "id",
+              "role",
+              "label",
+              "description",
+              "position"
+            ]
+          }
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Unique identifier for the edge (e.g., 'edge-1-2', 'dep-config-action'). Required by React Flow."
+              },
+              "source": {
+                "type": "string",
+                "description": "The 'id' of the node where the edge originates. This MUST match one of the node 'id' values. Required by React Flow."
+              },
+              "target": {
+                "type": "string",
+                "description": "The 'id' of the node where the edge terminates. This MUST match one of the node 'id' values. Required by React Flow."
+              },
+              "relationship_type": {
+                "type": "string",
+                "description": "Describes the semantic nature of the connection (e.g., sequential, dependency, informational). Helps in understanding edge meaning.",
+                "enum": [
+                  "SequentialNextStep",
+                  "DependencyPrecededBy",
+                  "InformationFlowTo",
+                  "CausalLinkLeadsTo",
+                  "ReferenceSeeAlso",
+                  "AlternativePath",
+                  "Triggers",
+                  "Verifies"
+                ]
+              },
+              "edge_render_type": {
+                "type": "string",
+                "description": "React Flow visual edge type. Defines the visual style of the edge path.",
+                "enum": [
+                  "default",
+                  "bezier",
+                  "straight",
+                  "step",
+                  "smoothstep"
+                ]
+              },
+              "label": {
+                "type": "string",
+                "description": "Required short label for the edge, displayed in the UI (e.g., 'On Success', 'If Error', 'Calls'). React Flow can display this on the edge."
+              },
+              "source_handle_id": {
+                "type": "string",
+                "description": "Optional: The ID of the source handle on the source node to connect from. If not specified, the default behavior of React Flow is used."
+              },
+              "target_handle_id": {
+                "type": "string",
+                "description": "Optional: The ID of the target handle on the target node to connect to. If not specified, the default behavior of React Flow is used."
+              },
+              "notes": {
+                "type": "string",
+                "description": "Optional additional context or explanation for this specific connection."
+              }
+            },
+            "required": [
+              "id",
+              "source",
+              "target",
+              "relationship_type",
+              "label"
+            ]
+          }
+        }
+      },
+      "required": [
+        "nodes",
+        "edges"
+      ]
+    },
+    "reproduction_summary": {
+      "type": "object",
+      "properties": {
+        "overall_bug_title": {
+          "type": "string",
+          "description": "A concise, descriptive title for the entire bug reproduction scenario."
+        },
+        "associated_issue_id": {
+          "type": "string",
+          "description": "Identifier for the bug ticket or issue (e.g., 'JIRA-123', 'GH-456'). Should be extracted from input if available."
+        },
+        "developer_actionable_takeaway": {
+          "type": "string",
+          "description": "A 1-2 sentence key insight or starting point for a developer investigating this bug. E.g., 'Check the null handling in PaymentProcessor around line 53, particularly when order currency mismatches user currency.'"
+        },
+        "estimated_reproduction_complexity": {
+          "type": "string",
+          "description": "Subjective assessment of how complex it is to reproduce this bug.",
+          "enum": [
+            "Low",
+            "Medium",
+            "High",
+            "Variable"
+          ]
+        },
+        "critical_environment_factors": {
+          "type": "array",
+          "description": "List of essential environmental conditions or configurations (e.g., 'OS: Ubuntu 22.04', 'Browser: Chrome v105', 'DB: PostgreSQL 14', 'FeatureFlag: new_checkout_flow=true').",
+          "items": {
+            "type": "string"
+          }
+        },
+        "key_steps_count": {
+          "type": "integer",
+          "description": "The number of primary actions or distinct steps involved in the main reproduction path."
+        }
+      },
+      "required": [
+        "overall_bug_title",
+        "associated_issue_id",
+        "developer_actionable_takeaway",
+        "estimated_reproduction_complexity",
+        "critical_environment_factors",
+        "key_steps_count"
+      ]
+    }
+  },
+  "required": [
+    "bug_reproduction_graph",
+    "reproduction_summary"
+  ]
+}

@@ -16,15 +16,12 @@ from dotenv import load_dotenv
 from .schema_converter import convert_to_gemini_schema
 
 def generate_bug_reproduction_graph(bug_data_text: str, schema_file: str, system_instruction_file: str, 
-                                   prompt_template_file: str, output_file=None, model_name="models/gemini-1.5-flash"):
+                                   prompt_template_file: str, output_file=None, model_name="models/gemini-2.5-pro-preview-05-06"):
     """
     Generate a bug reproduction graph using the Gemini API with a structured output schema.
     
     Args:
         bug_data_text: A formatted string containing key details about the bug.
-        schema_file: Path to JSON schema file
-        system_instruction_file: Path to system instruction file 
-        prompt_template_file: Path to prompt template file
         output_file: Optional path to save the result
         model_name: Gemini model to use (default: models/gemini-1.5-flash)
     
