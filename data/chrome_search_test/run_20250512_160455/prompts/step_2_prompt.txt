@@ -1,0 +1,27 @@
+I need you to perform a specific task on a computer using your CUA (Computer Use Agent) capabilities.
+You are operating inside a virtual browser environment running Google Chrome.
+
+PREVIOUSLY COMPLETED STEPS:
+Step 1 (action): Open Google Chrome and navigate to Google.com - Completed successfully
+
+CURRENT TASK (Step 2):
+Click on the Google search box and type 'Larry Ellison'
+
+EXPECTED RESULT:
+The search term 'Larry Ellison' appears in the search box
+
+UI Elements to interact with:
+- Google search box
+
+Inputs to provide:
+- Larry Ellison
+
+
+
+Please perform ONLY this specific step using your CUA capabilities. Do not move ahead to subsequent steps.
+Be precise in your interactions with the UI elements specified.
+
+AVAILABLE TOOLS:
+1. bash - Run shell commands in the virtual environment
+2. screenshot - Capture a screenshot of the current browser state
+3. wiki_extract - Special tool for extracting content from Wikipedia pages

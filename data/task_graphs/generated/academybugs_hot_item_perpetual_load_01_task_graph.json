@@ -1,0 +1,122 @@
+{
+  "name": "bug_academybugs_hot_item_perpetual_load_01",
+  "description": "Clicking 'HOT ITEM' on a product detail page causes the page to enter a perpetual loading state.",
+  "environment": {
+    "application": "AcademyBugs.com",
+    "browser": "Firefox",
+    "operating_system": "Any"
+  },
+  "task_graph": {
+    "nodes": [
+      {
+        "id": "1",
+        "type": "action",
+        "content": "Open a new Firefox browser window.",
+        "category": "setup",
+        "metadata": {
+          "image_refs": [],
+          "ui_elements": [
+            "Firefox browser application"
+          ],
+          "inputs": [],
+          "expected_result": "A new Firefox browser window is open and active."
+        }
+      },
+      {
+        "id": "2",
+        "type": "action",
+        "content": "Navigate to the 'Find Bugs' page by entering 'https://academybugs.com/find-bugs/' into the address bar and pressing Enter.",
+        "category": "setup",
+        "metadata": {
+          "image_refs": [],
+          "ui_elements": [
+            "Browser address bar"
+          ],
+          "inputs": [
+            "url=https://academybugs.com/find-bugs/"
+          ],
+          "expected_result": "The 'Find Bugs' page (https://academybugs.com/find-bugs/) is successfully loaded and displayed."
+        }
+      },
+      {
+        "id": "3",
+        "type": "action",
+        "content": "On the 'Find Bugs' page, identify and click on the product link for 'Silver Heart Bracelet'.",
+        "category": "action",
+        "metadata": {
+          "image_refs": [],
+          "ui_elements": [
+            "Product link with text 'Silver Heart Bracelet'"
+          ],
+          "inputs": [],
+          "expected_result": "The product detail page for 'Silver Heart Bracelet' is loaded and displayed."
+        }
+      },
+      {
+        "id": "4",
+        "type": "action",
+        "content": "On the product detail page, locate the 'HOT ITEM' section, typically in a sidebar. Click on the 'HOT ITEM' image or its associated link.",
+        "category": "action",
+        "metadata": {
+          "image_refs": [],
+          "ui_elements": [
+            "'HOT ITEM' image",
+            "'HOT ITEM' link",
+            "Sidebar section containing 'HOT ITEM'"
+          ],
+          "inputs": [],
+          "expected_result": "The page initiates an attempt to load new content or update a section related to the 'HOT ITEM'."
+        }
+      },
+      {
+        "id": "5",
+        "type": "observation",
+        "content": "Observe the main content area of the page and the browser's loading indicators (e.g., tab spinner, mouse cursor).",
+        "category": "verification",
+        "metadata": {
+          "image_refs": [],
+          "ui_elements": [
+            "Main content area",
+            "Browser tab loading indicator",
+            "Page loading spinner"
+          ],
+          "inputs": [],
+          "expected_result": "The page (or a significant portion of it) enters a perpetual loading state. A spinner icon remains indefinitely, or the browser tab continues to show a loading animation, and the page does not resolve to display new content or return to an idle state."
+        }
+      }
+    ],
+    "edges": [
+      {
+        "source": "1",
+        "target": "2"
+      },
+      {
+        "source": "2",
+        "target": "3"
+      },
+      {
+        "source": "3",
+        "target": "4"
+      },
+      {
+        "source": "4",
+        "target": "5"
+      }
+    ]
+  },
+  "verification_steps": [
+    "Step 1: After clicking the 'HOT ITEM' on the product detail page, confirm that the main content area or the browser tab displays a continuous loading animation (e.g., a spinner icon or tab loading animation).",
+    "Step 2: Verify that this loading state persists for an extended period (e.g., >30 seconds) and the page does not resolve to display new content or return to an idle state.",
+    "Step 3: (Optional) Open the browser's developer tools. Check the Network tab for continuously pending requests related to the 'HOT ITEM' action. Check the Console tab for any JavaScript errors that might indicate the cause of the perpetual loading."
+  ],
+  "confidence_score": 0.9,
+  "missing_information": [
+    "Screenshots of the 'Find Bugs' page to identify product links.",
+    "Screenshots of a product detail page showing the 'HOT ITEM' section and its typical location (e.g., sidebar).",
+    "Specific CSS selectors or DOM paths for the 'Silver Heart Bracelet' link and the 'HOT ITEM' element to improve automation reliability."
+  ],
+  "source": {
+    "model": "gemini-2.5-pro-preview-03-25",
+    "raw_data_package": "unknown"
+  }
+}

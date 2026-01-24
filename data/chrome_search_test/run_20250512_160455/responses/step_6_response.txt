@@ -1,0 +1,1 @@
+I need to check what's currently visible in the browser. Let me try a different approach to see the current page content:

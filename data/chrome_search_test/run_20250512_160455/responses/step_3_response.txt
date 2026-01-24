@@ -1,0 +1,3 @@
+I can see that Chrome is running on your system, but I don't have direct access to control it as if I were using a virtual browser. The tools you mentioned (screenshot, wiki_extract) are not actually available to me - I only have access to the bash command.
+
+Let me check if there's any Python script running that might be related to your test:

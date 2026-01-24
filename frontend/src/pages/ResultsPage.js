@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useParams, useLocation, Link, useNavigate } from 'react-router-dom';
+import './ResultsPage.css'; // Assuming you have or will create this CSS file
 
 // --- Dummy Data & Logic ---
 const resultCodes = {
@@ -29,73 +30,92 @@ const statusSuggestions = [
 
 function ResultsPage() {
     const { bugId } = useParams();
-    const navigate = useNavigate();
-    const location = useLocation();
-
-    // Get reproduction status from query params (passed from TracerPage simulation)
+    const location = useLocation(); // To get state passed from navigation
+    const navigate = useNavigate(); // For "Reproduce Again" type buttons
     const queryParams = new URLSearchParams(location.search);
-    const simulatedReproduced = queryParams.get('reproduced') === 'true';
 
-    // State for editable fields
-    const [resultCode, setResultCode] = useState(simulatedReproduced ? 'VULN_CONFIRMED_EXPLOIT' : 'CANNOT_REPRODUCE_STEPS');
-    const [suggestedStatus, setSuggestedStatus] = useState(simulatedReproduced ? 'Validated' : 'Needs Reproduction');
-    const [proposedSolution, setProposedSolution] = useState('');
-    const [moreInfoRequest, setMoreInfoRequest] = useState('');
-    const [stuckInfo, setStuckInfo] = useState(''); // Info if agent got stuck
+    const isDemo = queryParams.get('demo') === 'true';
+    const reproduced = queryParams.get('reproduced') === 'true';
+    
+    // State for API-fetched results (if not in demo mode)
+    const [apiResults, setApiResults] = useState(null);
+    const [isLoading, setIsLoading] = useState(!isDemo); // Don't load if demo
+    const [error, setError] = useState(null);
 
-    // Simulate generating content based on result
+    // For demo mode, get logs and title from location state
+    const demoLogsFromState = isDemo ? location.state?.demoLogs : null;
+    const demoBugTitle = isDemo ? location.state?.bugTitle : "Demo Bug";
+
+    // State for editable fields / API results
+    const [resultCode, setResultCode] = useState('');
+    const [suggestedStatus, setSuggestedStatus] = useState('');
+    const [analysisText, setAnalysisText] = useState(''); // For proposed solution / analysis
+    const [errorFromApi, setErrorFromApi] = useState(null);
+    const [isLoadingApi, setIsLoadingApi] = useState(!isDemo);
+
     useEffect(() => {
-        if (simulatedReproduced) {
-            setProposedSolution(
-`Based on the successful reproduction and analysis of logs (simulated), the vulnerability appears to stem from insufficient input validation in the 'api/purchase_orders' endpoint handler.
+        if (isDemo && reproduced) {
+            setResultCode('BUG_REPRODUCED_CONSISTENT');
+            setSuggestedStatus('Validated');
+            setAnalysisText(
+`The X/Twitter social share link bug was successfully reproduced. 
+
+Observations:
+- Clicking the 'X' icon on the product page (e.g., for 'DNK Yellow Shoes') attempts to navigate to a Twitter sharing URL.
+- The navigation fails with a DNS error (specifically, the page shows an error like "Server Not Found" or "Hmm. We're having trouble finding that site").
+- The URL in the address bar shows a typo: "https://twitter.cointent/..." instead of "https://twitter.com/intent/...".
+
+Root Cause:
+The issue is a typo in the constructed URL for the X/Twitter sharing functionality. The domain is incorrectly specified as "twitter.cointent".
 
 Recommended Fix:
-1. Implement strict validation on the server-side for 'total_amount' against user-specific approval limits before processing the request.
-2. Ensure 'approval_status' cannot be overridden by the client request; it should only be set by the backend approval logic.
-3. Validate 'cost_center_id' against the user's allowed cost centers.
-
-Relevant Code Files (Simulated):
-- 'src/server/controllers/purchase_order_controller.py' (line 152)
-- 'src/server/middleware/auth_middleware.py' (line 88)
-`
-            );
-            setMoreInfoRequest(''); // Clear if reproduced
-            setStuckInfo(''); // Clear if reproduced
-        } else {
-            setProposedSolution(''); // Clear if not reproduced
-            setMoreInfoRequest('The reproduction steps provided were unclear around Step 4 (JSON modification). Could the customer please provide the exact JSON payload they used before and after modification? A HAR file capture would be ideal.');
-            setStuckInfo('The agent simulation got stuck during Step 3 (Proxy Setup). Manual intervention might be required to confirm proxy configuration.'); // Example if stuck
+1. Locate the code responsible for generating the social media sharing links (likely in a frontend component or a backend template).
+2. Correct the typo in the Twitter sharing URL from "twitter.cointent" to "twitter.com/intent".
+3. Test the corrected link across multiple products to ensure proper redirection to the X/Twitter sharing interface.
+`);
+            setIsLoadingApi(false);
+        } else if (!isDemo && bugId) {
+            setIsLoadingApi(true);
+            // TODO: Replace with actual API call to fetch results for bugId
+            console.log(`Non-demo: Would fetch results for ${bugId}`);
+            setTimeout(() => { // Simulating API call
+                if (reproduced) {
+                    setResultCode('BUG_REPRODUCED_CONSISTENT'); // Example
+                    setSuggestedStatus('Validated');
+                    setAnalysisText(`Bug ${bugId} was reproduced. Further API-driven analysis would go here.`);
+                } else {
+                    setResultCode('CANNOT_REPRODUCE_STEPS');
+                    setSuggestedStatus('Needs More Info');
+                    setAnalysisText(`Could not reproduce bug ${bugId}. Steps may be unclear or environment specific.`);
+                }
+                setIsLoadingApi(false);
+            }, 1000);
         }
-    }, [simulatedReproduced]);
+    }, [bugId, isDemo, reproduced, location.state]);
 
     const handleReproduceAgain = () => {
-        // Navigate back to the Tracer page to run again
-        navigate(`/tracer/${bugId}/run`);
+        const path = isDemo ? '/hardcoded-task-flow' : `/tracer/${bugId}/run`;
+        navigate(path);
     };
 
-    const reproductionStatusStyle = {
-        padding: '15px 20px',
-        borderRadius: '6px',
-        marginBottom: '25px',
-        border: '1px solid',
-        backgroundColor: simulatedReproduced ? '#d4edda' : '#f8d7da',
-        borderColor: simulatedReproduced ? '#c3e6cb' : '#f5c6cb',
-        color: simulatedReproduced ? '#155724' : '#721c24',
-    };
+    if (isLoading && !isDemo) {
+        return <div className="results-container loading"><h2>Loading Results for {bugId}...</h2></div>;
+    }
+
+    if (error && !isDemo) {
+        return <div className="results-container error"><h2>Error loading results: {error}</h2></div>;
+    }
 
     return (
-        <div>
-            <div className="page-header">
-                <h1>Tracer Results: Bug {bugId}</h1>
+        <div className="results-container">
+            <h1 className="results-title {isDemo ? 'demo-title' : ''}">
+                {isDemo ? `DEMO RESULT: ${demoBugTitle}` : `Results for Bug: ${bugId}`}
+            </h1>
+            <div className={`status-banner ${reproduced ? 'success' : 'failure'}`}>
+                {reproduced ? "Bug Successfully Reproduced!" : (isDemo ? "Bug Not Reproduced (Demo Configuration)" : "Bug Not Reproduced")}
             </div>
 
-            <section style={reproductionStatusStyle}>
-                <h2 style={{ marginTop: 0, marginBottom: 0, fontSize: '1.4em' }}>
-                     Reproduction Status: {simulatedReproduced ? 'Successfully Reproduced' : 'Failed to Reproduce'}
-                 </h2>
-            </section>
-
-            <div className="card">
+            <div className="results-section card">
                 <h3>Result Categorization</h3>
                 <label htmlFor="resultCode">Result Code: </label>
                 <select id="resultCode" value={resultCode} onChange={(e) => setResultCode(e.target.value)} style={{ marginLeft: '10px', padding: '5px', minWidth: '250px' }}>
@@ -103,48 +123,47 @@ Relevant Code Files (Simulated):
                         <option key={code} value={code}>{description} ({code})</option>
                     ))}
                 </select>
-                <p style={{ fontSize: '0.9em', color: '#6c757d', marginTop: '5px' }}>*LLM-generated suggestion, editable by user.*</p>
             </div>
 
-            {!simulatedReproduced && moreInfoRequest && (
-                <div className="card">
-                    <h3 style={{ color: '#856404' }}>Request for More Information (from Customer)</h3>
-                    <p>{moreInfoRequest}</p>
-                </div>
-            )}
-
-             {!simulatedReproduced && stuckInfo && (
-                <div className="card">
-                    <h3 style={{ color: '#721c24' }}>Request for Input (from User)</h3>
-                    <p>{stuckInfo}</p>
-                </div>
-            )}
-
-            {simulatedReproduced && proposedSolution && (
-                 <div className="card">
-                    <h3>Proposed Solution / Analysis</h3>
-                    <p style={{ fontSize: '0.95em', color: '#6c757d', marginBottom: '15px' }}>The following analysis is based on successful reproduction and simulated log/code cross-referencing:</p>
-                    <pre>
-                        {proposedSolution}
-                    </pre>
-                </div>
-            )}
-
-            <div className="card">
-                <h3>Suggested Status Change</h3>
-                 <label htmlFor="statusSuggest">Status: </label>
+            <div className="results-section card">
+                <h3>Suggested Status</h3>
+                <label htmlFor="statusSuggest">Status: </label>
                 <select id="statusSuggest" value={suggestedStatus} onChange={(e) => setSuggestedStatus(e.target.value)} style={{ marginLeft: '10px', padding: '5px', minWidth: '200px' }}>
                     {statusSuggestions.map((status) => (
                         <option key={status} value={status}>{status}</option>
                     ))}
                 </select>
-                 <p style={{ fontSize: '0.9em', color: '#6c757d', marginTop: '5px' }}>*LLM-generated suggestion, editable by user.*</p>
             </div>
 
-             <button onClick={handleReproduceAgain} style={{ marginTop: '10px', padding: '12px 25px', fontSize: '1.1em', backgroundColor: '#6c757d' }}>
-                Reproduce Again
-            </button>
+            <div className="results-section card">
+                <h3>Analysis & Proposed Solution</h3>
+                <textarea 
+                    value={analysisText} 
+                    onChange={(e) => setAnalysisText(e.target.value)} 
+                    rows={15} 
+                    style={{width: '98%', padding: '10px', fontFamily:'monospace', whiteSpace: 'pre-wrap'}}
+                    placeholder={isDemo && reproduced ? "Details of the reproduced demo bug..." : "Enter analysis or solution here..."}
+                />
+            </div>
 
+            {isDemo && demoLogsFromState && (
+                <div className="results-section">
+                    <h2>Full Demo Agent Logs:</h2>
+                    <div className="log-display-results">
+                        {demoLogsFromState.map((logBlock, index) => (
+                            <pre key={index} className="log-entry-results">{logBlock}</pre>
+                        ))}
+                    </div>
+                </div>
+            )}
+            
+            <button onClick={handleReproduceAgain} style={{ marginTop: '20px', padding: '10px 18px' }}>
+                {isDemo ? "Run Demo Again" : "Reproduce Again"}
+            </button>
+            <Link to={isDemo ? "/bugs" : `/bugs/${bugId}`} className="back-link" style={{marginLeft: '10px'}}>
+                {isDemo ? "Back to Bug List" : "Back to Bug Detail"}
+            </Link>
+            {!isDemo && <Link to="/bugs" className="back-link" style={{marginLeft: '10px'}}>Back to Bug List</Link>}
         </div>
     );
 }

@@ -1,0 +1,54 @@
+{
+  "bug_metadata": {
+    "bug_id": "academybugs_currency_freeze_01",
+    "bug_title": "Website freezes when changing currency on product page",
+    "test_environment_url": "https://academybugs.com/find-bugs/",
+    "severity": {
+      "level": 0,
+      "description": "Test Case"
+    },
+    "status": {
+      "code": "0",
+      "description": "New"
+    },
+    "customer": {
+      "name": "N/A",
+      "environment": "Web"
+    },
+    "product": {
+      "id": "N/A",
+      "name": "AcademyBugs.com",
+      "version": {
+        "reported": "Unknown",
+        "component_ver": "",
+        "fixed_ver": ""
+      }
+    },
+    "component": {
+      "name": "Website freezes when changing currency on product page",
+      "type": "",
+      "subcomponent": ""
+    },
+    "dates": {
+      "created": "2025-05-12T22:57:19.700888",
+      "updated": "2025-05-12T22:57:19.700888",
+      "fix_eta": ""
+    },
+    "reporter": "Test Case Definition",
+    "assignee": "N/A"
+  },
+  "bug_content": {
+    "description": "",
+    "steps_to_reproduce": "1. Navigate to the 'Find Bugs' page: https://academybugs.com/find-bugs/ .\n2. Identify and click on the first available product link (e.g., a product like 'DNK Yellow Shoes') to navigate to its product detail page.\n3. On the product detail page, locate the currency selection dropdown menu.\n4. Click the currency selection dropdown to expand it.\n5. Select a currency different from the currently displayed one (e.g., if USD is shown, select EUR or GBP).\n6. Observe the application. The expected bug behavior is that the website becomes unresponsive or freezes after changing the currency.",
+    "expected_outcome": "The website interface becomes unresponsive or freezes after attempting to change the currency on a product page.",
+    "additional_info": "Source: AcademyBugs.com - Website freezes when changing currency on product page. Original Description: When changing the currency to pay the entire website freezes.",
+    "reproducible": {
+      "by_customer": true,
+      "by_support": false,
+      "environment": "Web (Automated Test)"
+    }
+  },
+  "attachments": [],
+  "comments": [],
+  "history": []
+}

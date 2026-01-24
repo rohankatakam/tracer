@@ -1,0 +1,98 @@
+{
+  "name": "bug_academybugs_currency_freeze_01",
+  "description": "Website freezes when changing currency on product page.",
+  "environment": {
+    "application": "AcademyBugs.com Unknown",
+    "browser": "Not specified",
+    "operating_system": "Not specified"
+  },
+  "task_graph": {
+    "nodes": [
+      {
+        "id": "1",
+        "type": "action",
+        "content": "Navigate to the 'Find Bugs' page by opening the URL 'https://academybugs.com/find-bugs/' in a web browser.",
+        "metadata": {
+          "image_refs": [],
+          "ui_elements": [
+            "Web browser address bar"
+          ],
+          "inputs": [
+            "url=https://academybugs.com/find-bugs/"
+          ],
+          "expected_result": "The 'Find Bugs' page loads successfully, displaying a list of products or bug scenarios."
+        }
+      },
+      {
+        "id": "2",
+        "type": "action",
+        "content": "On the 'Find Bugs' page, locate and click the link corresponding to the first product listed. For example, if 'DNK Yellow Shoes' is the first product, click its link.",
+        "metadata": {
+          "image_refs": [],
+          "ui_elements": [
+            "First product link on the page (e.g., 'DNK Yellow Shoes' link)"
+          ],
+          "inputs": [],
+          "expected_result": "The product detail page for the selected product loads."
+        }
+      },
+      {
+        "id": "3",
+        "type": "action",
+        "content": "On the loaded product detail page, find the currency selection dropdown menu. Click this dropdown menu to reveal the list of available currencies.",
+        "metadata": {
+          "image_refs": [],
+          "ui_elements": [
+            "Currency selection dropdown menu"
+          ],
+          "inputs": [],
+          "expected_result": "The currency dropdown menu expands, displaying available currency options (e.g., USD, EUR, GBP)."
+        }
+      },
+      {
+        "id": "4",
+        "type": "action",
+        "content": "From the expanded currency dropdown menu, click on a currency option that is different from the currently selected one. For instance, if 'USD' is currently selected, click on 'EUR' or 'GBP'.",
+        "metadata": {
+          "image_refs": [],
+          "ui_elements": [
+            "Currency option in dropdown (e.g., EUR, GBP)"
+          ],
+          "inputs": [
+            "selected_currency=EUR"
+          ],
+          "expected_result": "A new currency (e.g., EUR) is clicked. The application attempts to process the currency change."
+        }
+      }
+    ],
+    "edges": [
+      {
+        "source": "1",
+        "target": "2"
+      },
+      {
+        "source": "2",
+        "target": "3"
+      },
+      {
+        "source": "3",
+        "target": "4"
+      }
+    ]
+  },
+  "verification_steps": [
+    "Step 1: After clicking a new currency in the dropdown (Node 4), observe the web page. Verify that the page becomes unresponsive, freezes, or does not correctly update to the new currency and stops responding to further interactions."
+  ],
+  "confidence_score": 0.9,
+  "missing_information": [
+    "Specific browser and version used during the original bug report.",
+    "Specific operating system and version.",
+    "Screenshots of the 'Find Bugs' page, product page, and currency dropdown for UI element identification and context.",
+    "The default currency displayed on the product page before interaction.",
+    "Exact name or locator for the 'first available product' if the list is dynamic or product names change."
+  ],
+  "source": {
+    "model": "gemini-2.5-pro-preview-03-25",
+    "raw_data_package": "unknown"
+  }
+}
