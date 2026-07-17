@@ -11,82 +11,71 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 import './TracerPage.css'; // Specific styles for this page
 
-// --- Dummy Task Graph Data ---
-// Matches the structure from TaskGraphGenerator
+// Static public demo data matching the TaskGraphGenerator shape.
 const dummyTaskGraph = {
-  name: "bug_SV-20250411",
-  description: "Task graph for JSON Tampering Exploit",
-  environment: { application: "ExampleApp v3.2.7" },
+  name: "academybugs_currency_freeze_01",
+  description: "Illustrative task graph for a public AcademyBugs report",
+  environment: { application: "AcademyBugs.com", browser: "Firefox" },
   task_graph: {
     nodes: [
       {
         id: "1",
-        type: "custom", // Use a custom node type for hover/blinking later
+        type: "custom",
         position: { x: 50, y: 50 },
         data: {
-          label: "Step 1: Login & Navigate",
-          content: "Log in to ExampleApp. Navigate to 'Purchase Orders'. Select 'Create PO Request'.",
-          metadata: { image_refs: [], ui_elements: ['Login Button', 'Purchase Orders Menu', 'Create PO Request Button'], inputs: [], expected_result: "PO creation form is visible" }
+          label: "Step 1: Open demo site",
+          content: "Navigate to the public AcademyBugs Find Bugs page.",
+          metadata: { image_refs: [], ui_elements: ['Browser address bar'], inputs: ['https://academybugs.com/find-bugs/'], expected_result: "The public bug gallery is visible" }
         }
       },
       {
         id: "2",
         type: "custom",
-        position: { x: 50, y: 150 },
+        position: { x: 50, y: 180 },
         data: {
-          label: "Step 2: Fill PO Form",
-          content: "Fill in standard PO fields: Vendor, Items, Cost Center.",
-          metadata: { image_refs: [], ui_elements: ['Vendor Field', 'Items Field', 'Cost Center Field'], inputs: ['vendor=ACME', 'item=Widgets'], expected_result: "Form fields populated" }
+          label: "Step 2: Open a product",
+          content: "Select the first available product and open its detail page.",
+          metadata: { image_refs: [], ui_elements: ['Product card', 'Product link'], inputs: [], expected_result: "A product detail page is visible" }
         }
       },
-       {
+      {
         id: "3",
         type: "custom",
-        position: { x: 50, y: 250 },
+        position: { x: 50, y: 310 },
         data: {
-          label: "Step 3: Setup Intercept",
-          content: "Configure Burp Suite (or similar proxy) to intercept POST requests to the /api/purchase_orders endpoint.",
-          metadata: { image_refs: [], ui_elements: [], inputs: [], expected_result: "Proxy ready to intercept" }
+          label: "Step 3: Find currency control",
+          content: "Locate and open the currency selection control.",
+          metadata: { image_refs: [], ui_elements: ['Currency selector'], inputs: [], expected_result: "Currency options are visible" }
         }
       },
       {
         id: "4",
         type: "custom",
-        position: { x: 300, y: 350 }, // Branching for the vulnerability step
+        position: { x: 300, y: 440 },
         data: {
-          label: "Step 4: Modify JSON",
-          content: "Submit PO. In intercepted request, modify JSON: change total_amount to 49999.99, add approval_status: CFO_APPROVED, set cost_center_id: FIN-2023-EXEC.",
-          metadata: { image_refs: [], ui_elements: [], inputs: ['total_amount=49999.99', 'approval_status=CFO_APPROVED'], expected_result: "JSON payload modified" }
+          label: "Step 4: Change currency",
+          content: "Choose a currency different from the currently selected value.",
+          metadata: { image_refs: [], ui_elements: ['Currency option'], inputs: ['A different listed currency'], expected_result: "The selection event is submitted" }
         }
       },
       {
         id: "5",
         type: "custom",
-        position: { x: 300, y: 450 },
+        position: { x: 300, y: 570 },
         data: {
-          label: "Step 5: Forward Request",
-          content: "Forward the modified JSON request to ExampleApp.",
-          metadata: { image_refs: [], ui_elements: [], inputs: [], expected_result: "Request sent to server" }
+          label: "Step 5: Observe response",
+          content: "Observe whether the page responds to input or remains in a loading state.",
+          metadata: { image_refs: [], ui_elements: ['Page controls', 'Loading indicator'], inputs: [], expected_result: "Responsiveness can be assessed" }
         }
       },
       {
         id: "6",
         type: "custom",
-        position: { x: 300, y: 550 },
+        position: { x: 550, y: 700 },
         data: {
-          label: "Step 6: Observe Response",
-          content: "Server responds with 200 OK, PO #98765.",
-          metadata: { image_refs: [], ui_elements: [], inputs: [], expected_result: "Server accepts request, returns PO ID" }
-        }
-      },
-      {
-        id: "7",
-        type: "custom",
-        position: { x: 550, y: 650 }, // Verification steps
-        data: {
-          label: "Step 7-8: Verification",
-          content: "Navigate to PO Dashboard. Verify PO #98765 shows as 'CFO_APPROVED' with $49,999.99.",
-          metadata: { image_refs: [], ui_elements: ['PO Dashboard', 'PO #98765 Entry'], inputs: [], expected_result: "Bug is verified: PO shows incorrect amount and status" }
+          label: "Step 6: Capture evidence",
+          content: "Capture the final browser state and mark the trace for human review.",
+          metadata: { image_refs: [], ui_elements: ['Browser viewport'], inputs: [], expected_result: "A reviewer has a screenshot and structured trace" }
         }
       },
     ],
@@ -96,18 +85,15 @@ const dummyTaskGraph = {
       { id: 'e3-4', source: '3', target: '4', animated: true },
       { id: 'e4-5', source: '4', target: '5', animated: true },
       { id: 'e5-6', source: '5', target: '6', animated: true },
-      { id: 'e6-7', source: '6', target: '7', animated: true },
     ]
   },
-  verification_steps: ["Verify PO #98765 shows CFO_APPROVED with $49,999.99"],
-  confidence_score: 0.95,
-  missing_information: []
+  verification_steps: ["Review the trace and final browser state for responsiveness"],
+  missing_information: ["A live run is required before determining whether the report reproduces"]
 };
-// --- End Dummy Task Graph Data ---
 
 // --- Dummy Simulation Logic ---
 const simulationSteps = dummyTaskGraph.task_graph.nodes.map(n => n.id);
-const SIMULATION_DELAY = 2500; // ms between steps
+const SIMULATION_DELAY = 1500;
 // --- End Dummy Simulation Logic ---
 
 // Custom Node for potential styling/interactions
@@ -185,20 +171,12 @@ function TracerPage() {
 
       addLog(`Executing Step ${stepId}: ${dummyTaskGraph.task_graph.nodes.find(n=>n.id===stepId)?.data?.label || 'Unknown'}`);
       
-      // Simulate getting stuck randomly for demo purposes
-      if (Math.random() < 0.15 && currentStepIndex > 0) { // ~15% chance after first step
-        addLog(`Agent needs guidance on step ${stepId}. Please provide input.`);
-        setNeedsGuidance(true);
-        setIsPaused(true); // Pause on needing guidance
-      } else {
-        // Proceed to next step after delay
-        timer = setTimeout(() => {
-          setCurrentStepIndex(prevIndex => prevIndex + 1);
-        }, SIMULATION_DELAY);
-      }
+      timer = setTimeout(() => {
+        setCurrentStepIndex(prevIndex => prevIndex + 1);
+      }, SIMULATION_DELAY);
 
     } else if (currentStepIndex >= simulationSteps.length && isRunning) {
-      addLog('Simulation complete. Bug Reproduced (Simulated).');
+      addLog('Simulation complete. Evidence is ready for human review.');
       setIsRunning(false);
       // Mark last node as finished (remove blinking)
        setNodes((nds) =>
@@ -206,7 +184,7 @@ function TracerPage() {
        );
       // Navigate to results page after a short delay
       setTimeout(() => {
-        navigate(`/tracer/${bugId}/results?reproduced=true`); // Pass result via query param for demo
+        navigate(`/tracer/${bugId}/results?simulation=complete`);
       }, 1500);
     }
 
@@ -268,10 +246,10 @@ function TracerPage() {
         </div>
       </div>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', border: '1px solid #ccc', padding: '10px' }}>
-        <h3>CUA Simulation & Logs</h3>
+        <h3>Static Flow Simulation</h3>
         <div style={{ marginBottom: '15px' }}>
           <button onClick={handleToggleRun} disabled={needsGuidance && !isPaused}>
-            {isRunning ? (isPaused ? 'Resume' : 'Pause') : 'Start CUA'}
+            {isRunning ? (isPaused ? 'Resume' : 'Pause') : 'Start Simulation'}
           </button>
           <span style={{ marginLeft: '10px' }}>Status: {isRunning ? (isPaused ? 'Paused' : 'Running') : 'Stopped'}</span>
         </div>
@@ -302,4 +280,4 @@ function TracerPage() {
   );
 }
 
-export default TracerPage; 
+export default TracerPage;

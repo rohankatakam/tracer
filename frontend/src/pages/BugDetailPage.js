@@ -1,65 +1,72 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
-// --- Dummy Data (could be fetched based on bugId) ---
-const dummyBugDetails = {
-  'SV-20250411': {
-    id: 'SV-20250411',
-    title: 'JSON Tampering Exploit in Purchase Order Approval Workflow',
-    severity: 'Critical',
-    status: 'Open',
-    product: 'ExampleApp v3.2.7',
-    reportedBy: 'Demo Organization',
-    reportedDate: '2025-04-11',
-    description: "A security vulnerability allows malicious actors to tamper with JSON requests in the purchase order approval workflow. By modifying the 'total_amount' and 'approval_status' fields, attackers can bypass financial approval limits and self-approve purchase orders for amounts exceeding their authorization. This exploit also allows for access to restricted cost centers.",
+// Public examples mirrored from academybugs_bug_reports.json.
+const demoBugDetails = {
+  academybugs_currency_freeze_01: {
+    id: 'academybugs_currency_freeze_01',
+    title: 'Website freezes when changing currency on product page',
+    severity: 'Medium',
+    status: 'Ready for reproduction',
+    product: 'AcademyBugs.com',
+    source: 'Public demo fixture',
+    targetUrl: 'https://academybugs.com/find-bugs/',
+    description: 'Changing the currency on a product detail page may leave the website unresponsive.',
     stepsToReproduce: [
-      'Log in to ExampleApp.',
-      "Navigate to 'Purchase Orders'.",
-      "Select 'Create PO Request'.",
-      "Fill in standard PO fields: Vendor, Items, Cost Center.",
-      "Configure Burp Suite (or similar proxy) to intercept POST requests to the /api/purchase_orders endpoint.",
-      "Submit the PO. In the intercepted request, modify the JSON body:",
-      "  - Change 'total_amount' from original value (e.g., 49.99) to a high value (e.g., 49999.99).",
-      "  - Add/Change 'approval_status' to 'CFO_APPROVED'.",
-      "  - Set 'cost_center_id' to a restricted one (e.g., 'FIN-2023-EXEC').",
-      "Forward the modified JSON to ExampleApp.",
-      "Observe server response (expected 200 OK, PO #XYZ created).",
-      "Navigate to PO Dashboard and verify PO #XYZ shows as 'CFO_APPROVED' with the inflated amount."
+      "Navigate to the public 'Find Bugs' page.",
+      'Open the first available product.',
+      'Locate and open the currency selector.',
+      'Choose a currency different from the current selection.',
+      'Observe whether the page remains responsive.'
     ],
-    expectedBehavior: "The system should validate the 'total_amount' against user approval limits and prevent unauthorized changes to 'approval_status' and 'cost_center_id'. The request should be rejected or flagged for review.",
-    actualBehavior: "The system accepts the tampered JSON, creating a PO with an inflated amount, an unauthorized approval status, and potentially an incorrect cost center. The server responds with 200 OK.",
-    securityImpact: "Bypass of financial approval thresholds (normal limit: $5,000); Self-approval of purchase orders requiring CFO signature; Access to restricted cost centers outside user's department.",
-    attachments: [
-      { name: 'ExampleApp_Vulnerability_Diagram.png', type: 'image', url: '/images/ExampleApp_Security_Vulnerability.png' }, // Using the provided image path
-      { name: 'exploit_poc.mp4', type: 'video', url: '#' }, // Placeholder video
-      { name: 'burp_request_log.txt', type: 'log', url: '#' }
-    ],
-    categorization: {
-      type: 'Security Vulnerability',
-      area: 'Purchase Order Module',
-      CWE: 'CWE-502: Deserialization of Untrusted Data' // Example CWE
-    }
+    expectedBehavior: 'The page should apply the new currency and remain responsive.',
+    reportedBehavior: 'The public demo report says the interface freezes after the currency changes.'
   },
-  // ... add other bug details if needed for testing navigation
-  'UI-20250320': {
-    id: 'UI-20250320',
-    title: 'User Profile Image Upload Fails with Large Files',
-    severity: 'High',
-    // ... (rest of the fields for this bug)
-    description: 'Users are unable to upload profile pictures larger than 5MB. The UI shows a generic error message.',
-    attachments: [],
-    stepsToReproduce: ['Try to upload an image > 5MB as profile picture'],
+  academybugs_twitter_share_nxdomain_01: {
+    id: 'academybugs_twitter_share_nxdomain_01',
+    title: 'X/Twitter share link leads to a DNS error',
+    severity: 'Low',
+    status: 'Ready for reproduction',
+    product: 'AcademyBugs.com',
+    source: 'Public demo fixture',
+    targetUrl: 'https://academybugs.com/find-bugs/',
+    description: 'The social share link may open an unreachable host instead of a sharing page.',
+    stepsToReproduce: [
+      "Navigate to the public 'Find Bugs' page.",
+      'Open a product.',
+      'Click the X/Twitter sharing icon.',
+      'Record the destination and any browser error.'
+    ],
+    expectedBehavior: 'A valid sharing page should open.',
+    reportedBehavior: 'The public demo report describes a DNS_PROBE_FINISHED_NXDOMAIN error.'
+  },
+  academybugs_hot_item_perpetual_load_01: {
+    id: 'academybugs_hot_item_perpetual_load_01',
+    title: "Clicking 'HOT ITEM' leads to perpetual loading",
+    severity: 'Medium',
+    status: 'Ready for reproduction',
+    product: 'AcademyBugs.com',
+    source: 'Public demo fixture',
+    targetUrl: 'https://academybugs.com/find-bugs/',
+    description: "The 'HOT ITEM' link may leave the page in a loading state that never resolves.",
+    stepsToReproduce: [
+      "Navigate to the public 'Find Bugs' page.",
+      'Open a product.',
+      "Click the 'HOT ITEM' image or link.",
+      'Observe the page and browser loading indicator.'
+    ],
+    expectedBehavior: 'The requested content should load or fail with a clear error.',
+    reportedBehavior: 'The public demo report describes a perpetual loading state.'
   }
 };
-// --- End Dummy Data ---
 
 function BugDetailPage() {
   const { bugId } = useParams();
   const navigate = useNavigate();
-  const bug = dummyBugDetails[bugId] || dummyBugDetails['SV-20250411']; // Fallback to default if ID not found
+  const bug = demoBugDetails[bugId];
 
   if (!bug) {
-    return <div><h2>Bug Not Found</h2><p>The requested bug ID does not exist.</p></div>;
+    return <div><h2>Bug Not Found</h2><p>The requested demo bug does not exist.</p></div>;
   }
 
   const handleRunTracer = () => {
@@ -71,78 +78,41 @@ function BugDetailPage() {
       <div className="page-header">
         <h1>Bug Detail: {bug.id}</h1>
       </div>
-      
+
       <h2>{bug.title}</h2>
-      <p><strong>Severity:</strong> {bug.severity} | <strong>Status:</strong> {bug.status || 'Open'}</p>
-      <p><strong>Product:</strong> {bug.product} | <strong>Reported By:</strong> {bug.reportedBy || 'N/A'} on {bug.reportedDate || 'N/A'}</p>
+      <p><strong>Severity:</strong> {bug.severity} | <strong>Status:</strong> {bug.status}</p>
+      <p><strong>Application:</strong> {bug.product} | <strong>Source:</strong> {bug.source}</p>
+      <p><strong>Authorized demo target:</strong> <a href={bug.targetUrl}>{bug.targetUrl}</a></p>
 
       <section style={{ marginTop: '20px', marginBottom: '20px' }}>
         <h3>Description</h3>
         <p>{bug.description}</p>
       </section>
 
-      {bug.stepsToReproduce && bug.stepsToReproduce.length > 0 && (
-        <section style={{ marginTop: '20px', marginBottom: '20px' }}>
-          <h3>Steps to Reproduce</h3>
-          <ol>
-            {bug.stepsToReproduce.map((step, index) => (
-              <li key={index}>{step}</li>
-            ))}
-          </ol>
-        </section>
-      )}
+      <section style={{ marginTop: '20px', marginBottom: '20px' }}>
+        <h3>Steps to Reproduce</h3>
+        <ol>
+          {bug.stepsToReproduce.map((step, index) => <li key={index}>{step}</li>)}
+        </ol>
+      </section>
 
-      {bug.expectedBehavior && (
-         <section style={{ marginTop: '20px', marginBottom: '20px' }}>
-          <h3>Expected Behavior</h3>
-          <p>{bug.expectedBehavior}</p>
-        </section>
-      )}
-      {bug.actualBehavior && (
-         <section style={{ marginTop: '20px', marginBottom: '20px' }}>
-          <h3>Actual Behavior</h3>
-          <p>{bug.actualBehavior}</p>
-        </section>
-      )}
-      {bug.securityImpact && (
-         <section style={{ marginTop: '20px', marginBottom: '20px' }}>
-          <h3>Security Impact</h3>
-          <p>{bug.securityImpact}</p>
-        </section>
-      )}
+      <section style={{ marginTop: '20px', marginBottom: '20px' }}>
+        <h3>Expected Behavior</h3>
+        <p>{bug.expectedBehavior}</p>
+      </section>
 
-      {bug.attachments && bug.attachments.length > 0 && (
-        <section style={{ marginTop: '20px', marginBottom: '20px' }}>
-          <h3>Attachments / Customer Documentation</h3>
-          <ul>
-            {bug.attachments.map((att, index) => (
-              <li key={index}>
-                {att.type === 'image' ? (
-                  <img src={att.url} alt={att.name} style={{ maxWidth: '400px', maxHeight: '300px', display: 'block', margin: '10px 0' }} />
-                ) : (
-                  <a href={att.url} target="_blank" rel="noopener noreferrer">{att.name}</a>
-                )}
-                ({att.type})
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      <section style={{ marginTop: '20px', marginBottom: '20px' }}>
+        <h3>Reported Behavior</h3>
+        <p>{bug.reportedBehavior}</p>
+      </section>
 
-      {bug.categorization && (
-        <section style={{ marginTop: '20px', marginBottom: '20px' }}>
-          <h3>Categorization</h3>
-          <p><strong>Type:</strong> {bug.categorization.type}</p>
-          <p><strong>Area:</strong> {bug.categorization.area}</p>
-          {bug.categorization.CWE && <p><strong>CWE:</strong> {bug.categorization.CWE}</p>}
-        </section>
-      )}
+      <p><em>This frontend is a static simulation. Running it does not control the Python agent.</em></p>
 
       <button onClick={handleRunTracer} style={{ marginTop: '20px', padding: '12px 25px', fontSize: '1.2em' }}>
-        Run Tracer
+        Open Tracer Simulation
       </button>
     </div>
   );
 }
 
-export default BugDetailPage; 
+export default BugDetailPage;

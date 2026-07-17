@@ -1,139 +1,67 @@
-# Byte-compiled / optimized / DLL files
+# Python bytecode and tooling
 __pycache__/
 *.py[cod]
 *$py.class
-
-# C extensions
-*.so
-
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# PyInstaller
-#  Usually these files are written by a PyInstaller build script
-*.manifest
-*.spec
-
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Unit test / coverage reports
-htmlcov/
-.tox/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 .coverage
 .coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-.hypothesis/
-.pytest_cache/
+htmlcov/
 
-# Translations
-*.mo
-*.pot
-
-# Django stuff:
-# *.log
-local_settings.py
-db.sqlite3
-
-# Flask stuff:
-instance/
-.webassets-cache
-
-# Scrapy stuff:
-.scrapy
-
-# Sphinx documentation
-docs/_build/
-
-# PyBuilder
-target/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# IPython
-profile_default/
-ipython_config.py
-
-# pyenv
-.python-version
-
-# celery beat schedule file
-celerybeat-schedule
-
-# SageMath parsed files
-*.sage.py
-
-# Environments
-.env
-.venv
-env/
+# Python environments and packaging
+.Python
+.venv/
 venv/
+env/
 ENV/
-env.bak/
-venv.bak/
+build/
+dist/
+*.egg-info/
+.eggs/
+wheels/
 
-# Project specific
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+
+# Node/frontend dependencies and generated output
+node_modules/
+frontend/node_modules/
+frontend/build/
+frontend/coverage/
+.npm/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Tracer runtime artifacts
 data/outputs/
+data/screenshots/
+data/pdf_artifacts/
+data/test_output/
+data/test_outputs/
+data/standardized_inputs/
+data/task_graphs/generated/
 debug_output/
-*.md
-anthropic-quickstarts/
-*.log
+logs/
 screenshots/
+*.log
 
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Pyre type checker
-.pyre/
-
-# VS Code
+# Editors and operating systems
+.DS_Store
 .vscode/
-*.code-workspace
-
-# PyCharm
 .idea/
 *.iml
+*.code-workspace
+*.swp
 
-# Jupyter
+# Notebooks and documentation builds
 .ipynb_checkpoints/
+docs/_build/
+site/
 
-# Mac OS
-.DS_Store
-
-# Project specific
-# Temporarily commenting out data exclusion to allow viewing in Windsurf
-# data/*
-# !data/.gitkeep
+# Optional local checkout of Anthropic's quickstart
+anthropic-quickstarts/

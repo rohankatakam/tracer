@@ -1,53 +1,39 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-// --- Dummy Data ---
-const dummyBugs = [
+// Public examples mirrored from academybugs_bug_reports.json.
+const demoBugs = [
   {
-    id: 'SV-20250411',
-    title: 'JSON Tampering Exploit in Purchase Order Approval Workflow',
-    severity: 'Critical',
-    status: 'Open',
-    product: 'ExampleApp v3.2.7',
-    reportedBy: 'Demo Organization'
-  },
-  {
-    id: 'UI-20250320',
-    title: 'User Profile Image Upload Fails with Large Files',
-    severity: 'High',
-    status: 'Open',
-    product: 'ConnectSphere v1.5.0',
-    reportedBy: 'Beta Testers Inc.'
-  },
-  {
-    id: 'DB-20250401',
-    title: 'Race Condition During Account Balance Update',
+    id: 'academybugs_currency_freeze_01',
+    title: 'Website freezes when changing currency on product page',
     severity: 'Medium',
-    status: 'In Progress',
-    product: 'FinanceCore v2.1',
-    reportedBy: 'Internal QA'
+    status: 'Ready for reproduction',
+    product: 'AcademyBugs.com'
   },
   {
-    id: 'FE-20250415',
-    title: 'Incorrect Currency Formatting on Checkout Page',
+    id: 'academybugs_twitter_share_nxdomain_01',
+    title: 'X/Twitter share link leads to a DNS error',
     severity: 'Low',
-    status: 'Open',
-    product: 'ShopEasy v4.0.1',
-    reportedBy: 'Customer Support'
+    status: 'Ready for reproduction',
+    product: 'AcademyBugs.com'
+  },
+  {
+    id: 'academybugs_hot_item_perpetual_load_01',
+    title: "Clicking 'HOT ITEM' leads to perpetual loading",
+    severity: 'Medium',
+    status: 'Ready for reproduction',
+    product: 'AcademyBugs.com'
   }
 ];
-// --- End Dummy Data ---
 
 const getSeverityStyle = (severity) => {
   switch (severity?.toLowerCase()) {
-    case 'critical':
-      return { color: '#dc3545', fontWeight: 'bold' }; // Red
     case 'high':
-      return { color: '#fd7e14' }; // Orange
+      return { color: '#fd7e14' };
     case 'medium':
-      return { color: '#ffc107' }; // Yellow
+      return { color: '#856404', fontWeight: 'bold' };
     case 'low':
-      return { color: '#17a2b8' }; // Cyan/Blue
+      return { color: '#17a2b8' };
     default:
       return {};
   }
@@ -57,7 +43,8 @@ function BugListPage() {
   return (
     <div>
       <div className="page-header">
-        <h1>Outstanding Bugs</h1>
+        <h1>Public Demo Bugs</h1>
+        <p>Static examples for illustrating Tracer's review flow.</p>
       </div>
       <table>
         <thead>
@@ -66,11 +53,11 @@ function BugListPage() {
             <th>Title</th>
             <th>Severity</th>
             <th>Status</th>
-            <th>Product</th>
+            <th>Application</th>
           </tr>
         </thead>
         <tbody>
-          {dummyBugs.map((bug) => (
+          {demoBugs.map((bug) => (
             <tr key={bug.id}>
               <td>
                 <Link to={`/bugs/${bug.id}`}>{bug.id}</Link>
@@ -87,4 +74,4 @@ function BugListPage() {
   );
 }
 
-export default BugListPage; 
+export default BugListPage;

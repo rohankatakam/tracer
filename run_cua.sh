@@ -7,10 +7,13 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 # Add the root directory to the Python path
 export PYTHONPATH="$SCRIPT_DIR:$PYTHONPATH"
 
+# Use Python 3 by default; allow callers to override it when needed.
+PYTHON_BIN="${PYTHON_BIN:-python3}"
+
 # Check if the command is test-json-fix
 if [ "$1" = "test-json-fix" ]; then
     echo "Running JSON serialization fix test..."
-    python "$SCRIPT_DIR/tests/integration/test_json_fix.py"
+    "$PYTHON_BIN" "$SCRIPT_DIR/tests/test_json_utils.py"
     exit $?
 fi
 
@@ -18,12 +21,17 @@ fi
 if [ "$1" = "test-pdf-processor" ]; then
     echo "Running PDF processor test..."
     if [ "$2" != "" ]; then
-        python "$SCRIPT_DIR/tests/integration/test_pdf_processor.py" "$2"
+        "$PYTHON_BIN" "$SCRIPT_DIR/tests/integration/test_pdf_processor.py" "$2"
     else
-        python "$SCRIPT_DIR/tests/integration/test_pdf_processor.py"
+        "$PYTHON_BIN" "$SCRIPT_DIR/tests/integration/test_pdf_processor.py"
     fi
     exit $?
 fi
 
-# Run the standard CLI with all arguments passed to this script
-python "$SCRIPT_DIR/src/cli.py" "$@"
+if [ "$1" = "direct-example" ]; then
+    "$PYTHON_BIN" "$SCRIPT_DIR/src/main_controller.py"
+    exit $?
+fi
+
+echo "Usage: $0 {test-json-fix|test-pdf-processor [pdf-path]|direct-example}"
+exit 2

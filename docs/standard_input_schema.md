@@ -20,7 +20,7 @@ This document describes the structure and data types for the standardized JSON f
 | ------------- | ------ | ------------------------------------------------------------------ |
 | `bug_id`      | String | Unique identifier for the bug.                                     |
 | `bug_title`   | String | Title or summary of the bug.                                       |
-| `test_environment_url` | String | URL or descriptive name of the target testing environment (e.g., "http://localhost:3000", "ExampleApp v19"). |
+| `test_environment_url` | String | URL or descriptive name of an authorized test environment (e.g., "http://localhost:3000", "ExampleApp v19"). |
 | `severity`    | Object | Object containing severity information.                            |
 | `status`      | Object | Object containing status information.                              |
 | `customer`    | Object | Object containing customer information.                            |

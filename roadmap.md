@@ -1,5 +1,9 @@
 # Development Roadmap
 
+> Historical planning document from the prototype sprint. It records intended work,
+> not a claim that every item below is implemented. See `README.md` for current,
+> verified capabilities and limitations.
+
 **Core Goal:** Develop a Python application that uses Anthropic's CUA API to reproduce text-based bug reports, then present success/failure with evidence. Demo-ready for YC.
 
 **Primary Development Tool:** WindSurf with Cascade Chat (using Claude 3.7 Sonnet Thinking)
